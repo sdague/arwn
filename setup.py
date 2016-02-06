@@ -37,6 +37,7 @@ setup(
     package_dir={
         'arwn': 'arwn',
     },
+    scripts=['bin/arwn'],
     include_package_data=True,
     install_requires=requirements,
     license="ISCL",
