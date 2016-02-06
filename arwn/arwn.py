@@ -14,14 +14,30 @@
 
 import json
 import time
+import os
+import sys
 
 import paho
-from RFXtrx import lowlevel as ll
-from RFXtrx.pyserial import PySerialTransport
 
 import arwn.temperature
 
+# Add vendor directory to module search path
+#
+# This is a bit ghetto and sucks, however there is no version of
+# pyRFXtrx up on pypi yet even though there is an active fork on
+# github for home-assistant. For now, just vendor it and I'll sort out
+# helping that other one onto pypi later.
+parent_dir = os.path.abspath(os.path.dirname(__file__))
+vendor_dir = os.path.join(parent_dir, 'vendor')
 
+sys.path.append(vendor_dir)
+
+from RFXtrx import lowlevel as ll
+from RFXtrx.pyserial import PySerialTransport
+
+
+
+# Utility functions for making the code easier to read below
 def is_temp_sensor(packet):
     return (isinstance(packet, ll.TempHumid) or
             isinstance(packet, ll.TempHumidBaro))
@@ -42,8 +58,8 @@ def is_wind(packet):
 class MQTT(object):
     def __init__(self, server):
         client = paho.Client()
-        client.on_connect = on_connect
-        client.on_message = on_message
+        # client.on_connect = on_connect
+        # client.on_message = on_message
         client.connect(server, 1883)
         client.loop_start()
         self.client = client

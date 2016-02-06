@@ -15,12 +15,15 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 requirements = [
-    # TODO: put package requirements here
+    'paho-mqtt',
+    'pyserial>=2.7',
 ]
 
 test_requirements = [
     # TODO: put package test requirements here
 ]
+
+test_requirements.extend(requirements)
 
 setup(
     name='arwn',
@@ -46,7 +49,6 @@ setup(
         'License :: OSI Approved :: ISC License (ISCL)',
         'Natural Language :: English',
         "Programming Language :: Python :: 2",
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.3',
