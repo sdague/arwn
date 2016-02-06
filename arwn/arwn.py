@@ -12,6 +12,8 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from __future__ import absolute_import
+
 import json
 import time
 import os
@@ -19,7 +21,7 @@ import sys
 
 import paho
 
-import arwn.temperature
+from arwn import temperature
 
 # Add vendor directory to module search path
 #
@@ -78,7 +80,7 @@ class MQTT(object):
         self.client.publish(topic, json.dumps(payload))
 
     def temperature(self, name, packet):
-        temp = arwn.temperature.Temperature("%sC" % packet.temp).as_F()
+        temp = temperature.Temperature("%sC" % packet.temp).as_F()
         topic = "temperature/%s" % name
         data = self._base_packet(packet)
         data['temp'] = round(temp.to_F(), 1)
