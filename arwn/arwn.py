@@ -16,27 +16,12 @@ from __future__ import absolute_import
 
 import json
 import time
-import os
-import sys
 
 import paho
 
 from arwn import temperature
-
-# Add vendor directory to module search path
-#
-# This is a bit ghetto and sucks, however there is no version of
-# pyRFXtrx up on pypi yet even though there is an active fork on
-# github for home-assistant. For now, just vendor it and I'll sort out
-# helping that other one onto pypi later.
-parent_dir = os.path.abspath(os.path.dirname(__file__))
-vendor_dir = os.path.join(parent_dir, 'vendor')
-
-sys.path.append(vendor_dir)
-
-from RFXtrx import lowlevel as ll
-from RFXtrx.pyserial import PySerialTransport
-
+from arwn.vendor.RFXtrx import lowlevel as ll
+from arwn.vendor.RFXtrx.pyserial import PySerialTransport
 
 
 # Utility functions for making the code easier to read below

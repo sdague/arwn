@@ -33,10 +33,10 @@ setup(
     author="Sean Dague",
     author_email='sean@dague.net',
     url='https://github.com/sdague/arwn',
-    packages=['arwn', 'RFXtrx'],
+    packages=['arwn', 'arwn.vendor.RFXtrx'],
     package_dir={
         'arwn': 'arwn',
-        'RFXtrx': 'arwn/vendor/RFXtrx'},
+    },
     include_package_data=True,
     install_requires=requirements,
     license="ISCL",

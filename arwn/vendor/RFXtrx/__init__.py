@@ -22,7 +22,7 @@ This module provides the base implementation for pyRFXtrx
 """
 # pylint: disable=R0903
 
-from RFXtrx import lowlevel
+from arwn.vendor.RFXtrx import lowlevel
 
 
 ###############################################################################
