@@ -16,7 +16,7 @@ with open('HISTORY.rst') as history_file:
 
 requirements = [
     'pyyaml>=3',
-    'python-daemon>=2.1',
+    'python-daemon',
     'paho-mqtt>=1.1',
     'pyserial>=3',
 ]
