@@ -15,7 +15,14 @@
 # under the License.
 
 import argparse
+import daemon
 import logging
+import sys
+
+import yaml
+
+import arwn
+
 
 def parse_args():
     parser = argparse.ArgumentParser('arwn')
@@ -27,6 +34,7 @@ def parse_args():
                         default='config.yml')
     return parser.parse_args()
 
+
 def setup_logger(logfile):
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
@@ -36,12 +44,14 @@ def setup_logger(logfile):
     logger.addHandler(fh)
     return fh, logger
 
+
 def event_loop(config):
-    dispatcher = Dispatcher(
+    dispatcher = arwn.Dispatcher(
         config['device'],
         config['names'],
         config['mqtt']['server'])
     dispatcher.loopforever()
+
 
 def main():
     args = parse_args()
