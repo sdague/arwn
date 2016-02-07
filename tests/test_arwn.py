@@ -10,7 +10,7 @@ Tests for `arwn` module.
 
 import unittest
 
-from arwn import engine
+from arwn import engine  # noqa
 
 
 class TestArwn(unittest.TestCase):

@@ -15,10 +15,10 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 requirements = [
-    'pyyaml',
-    'python-daemon',
-    'paho-mqtt',
-    'pyserial>=2.7',
+    'pyyaml>=3',
+    'python-daemon>=2.1',
+    'paho-mqtt>=1.1',
+    'pyserial>=3',
 ]
 
 test_requirements = [
