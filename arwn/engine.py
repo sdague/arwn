@@ -102,7 +102,7 @@ class MQTT(object):
         self.send(topic, data)
 
     def unknown(self, packet):
-        topic = "unknown/%s" % packet.id_field
+        topic = "unknown/%s" % packet.id_string
         data = self._base_packet(packet)
         data['dump'] = str(packet)
         self.send(topic, data)
