@@ -23,6 +23,10 @@ RFXtrx.
 """
 # pylint: disable=C0302,R0902,R0903,R0911,R0913
 
+import logging
+
+logger = logging.getLogger()
+
 
 def parse(data):
     """ Parse a packet from a bytearray """
@@ -63,22 +67,19 @@ def parse(data):
         pkt.load_receive(data)
         return pkt
     elif data[1] == 0x55:
-        print "Found rain gauge"
         pkt = RainGauge()
         pkt.load_receive(data)
         return pkt
     elif data[1] == 0x56:
-        print "Found wind sensor"
         pkt = Wind()
         pkt.load_receive(data)
         return pkt
     elif data[1] == 0x57:
-        print "Found UV sensor"
         pkt = UV()
         pkt.load_receive(data)
         return pkt
     else:
-        print "Unknown sensor type %s" % ("{0:02x}".format(data[1]))
+        logger.debug("Unknown sensor type %s" % ("{0:02x}".format(data[1])))
 
 
 ###############################################################################
