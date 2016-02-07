@@ -12,16 +12,17 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from __future__ import absolute_import
-
 import json
+import logging
 import time
 
-import paho
+import paho.mqtt.client as paho
 
 from arwn import temperature
 from arwn.vendor.RFXtrx import lowlevel as ll
 from arwn.vendor.RFXtrx.pyserial import PySerialTransport
+
+logger = logging.getLogger()
 
 
 # Utility functions for making the code easier to read below
@@ -50,7 +51,7 @@ class MQTT(object):
         client.connect(server, 1883)
         client.loop_start()
         self.client = client
-        self.root = "arwn"
+        self.root = "arwn2"
 
     def _base_packet(self, packet):
         payload = dict(
@@ -117,6 +118,10 @@ class Dispatcher(object):
     def loopforever(self):
         while True:
             event = self.transport.receive_blocking()
+            logger.debug(event)
+
+            if event is None:
+                continue
             packet = event.device.pkt
 
             if is_temp_sensor(packet):

@@ -15,6 +15,8 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 requirements = [
+    'pyyaml',
+    'python-daemon',
     'paho-mqtt',
     'pyserial>=2.7',
 ]
@@ -33,7 +35,7 @@ setup(
     author="Sean Dague",
     author_email='sean@dague.net',
     url='https://github.com/sdague/arwn',
-    packages=['arwn', 'arwn.vendor.RFXtrx'],
+    packages=['arwn', 'arwn.vendor', 'arwn.vendor.RFXtrx'],
     package_dir={
         'arwn': 'arwn',
     },
