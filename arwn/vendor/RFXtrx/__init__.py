@@ -55,6 +55,7 @@ class RFXtrxDevice(object):
         self.subtype = pkt.subtype
         self.type_string = pkt.type_string
         self.id_string = pkt.id_string
+        self.pkt = pkt
 
     def __eq__(self, other):
         if self.packettype != other.packettype:
@@ -251,7 +252,7 @@ class SensorEvent(RFXtrxEvent):
         if isinstance(pkt, lowlevel.Temp) \
                 or isinstance(pkt, lowlevel.TempHumid) \
                 or isinstance(pkt, lowlevel.TempHumidBaro):
-            self.values['Temperature'] = pkt.temp
+            self.values['Temperature (C)'] = pkt.temp
         if isinstance(pkt, lowlevel.Humid) \
                 or isinstance(pkt, lowlevel.TempHumid) \
                 or isinstance(pkt, lowlevel.TempHumidBaro):
@@ -260,9 +261,16 @@ class SensorEvent(RFXtrxEvent):
             self.values['Humidity status numeric'] = pkt.humidity_status
         if isinstance(pkt, lowlevel.Baro) \
                 or isinstance(pkt, lowlevel.TempHumidBaro):
-            self.values['Barometer'] = pkt.barometer
+            self.values['Barometer (hPa)'] = pkt.baro
             self.values['Forecast'] = pkt.forecast_string
             self.values['Forecast numeric'] = pkt.forecast
+        if isinstance(pkt, lowlevel.RainGauge):
+            self.values['Rain Rate (mm/hr)'] = pkt.rainrate
+            self.values['Rain Total (mm)'] = pkt.raintotal
+        if isinstance(pkt, lowlevel.Wind):
+            self.values['Direction'] = pkt.direction
+            self.values['Average speed'] = pkt.average_speed
+            self.values['Gust'] = pkt.gust
         self.values['Battery numeric'] = pkt.battery
         self.values['Rssi numeric'] = pkt.rssi
 

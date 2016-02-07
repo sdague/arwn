@@ -30,34 +30,55 @@ def parse(data):
         pkt = Lighting1()
         pkt.load_receive(data)
         return pkt
-    if data[1] == 0x11:
+    elif data[1] == 0x11:
         pkt = Lighting2()
         pkt.load_receive(data)
         return pkt
-    if data[1] == 0x12:
+    elif data[1] == 0x12:
         pkt = Lighting3()
         pkt.load_receive(data)
         return pkt
-    if data[1] == 0x13:
+    elif data[1] == 0x13:
         pkt = Lighting4()
         pkt.load_receive(data)
         return pkt
-    if data[1] == 0x14:
+    elif data[1] == 0x14:
         pkt = Lighting5()
         pkt.load_receive(data)
         return pkt
-    if data[1] == 0x15:
+    elif data[1] == 0x15:
         pkt = Lighting6()
         pkt.load_receive(data)
         return pkt
-    if data[1] == 0x50:
+    elif data[1] == 0x50:
         pkt = Temp()
         pkt.load_receive(data)
         return pkt
-    if data[1] == 0x52:
+    elif data[1] == 0x52:
         pkt = TempHumid()
         pkt.load_receive(data)
         return pkt
+    elif data[1] == 0x54:
+        pkt = TempHumidBaro()
+        pkt.load_receive(data)
+        return pkt
+    elif data[1] == 0x55:
+        print "Found rain gauge"
+        pkt = RainGauge()
+        pkt.load_receive(data)
+        return pkt
+    elif data[1] == 0x56:
+        print "Found wind sensor"
+        pkt = Wind()
+        pkt.load_receive(data)
+        return pkt
+    elif data[1] == 0x57:
+        print "Found UV sensor"
+        pkt = UV()
+        pkt.load_receive(data)
+        return pkt
+    else:
+        print "Unknown sensor type %s" % ("{0:02x}".format(data[1]))
 
 
 ###############################################################################
@@ -1137,7 +1158,7 @@ class Baro(SensorPacket):
         self.seqnbr = data[3]
         self.id1 = data[4]
         self.id2 = data[5]
-        self.baro1 = data[6]
+        self.baro1 = data[6] & 0x0f
         self.baro2 = data[7]
         self.baro = (self.baro1 << 8) + self.baro2
         self.forecast = data[8]
@@ -1219,9 +1240,10 @@ class TempHumidBaro(SensorPacket):
             self.temp = -self.temp
         self.humidity = data[8]
         self.humidity_status = data[9]
-        self.baro1 = data[10]
+        self.baro1 = data[10] & 0x0f
         self.baro2 = data[11]
-        self.baro = (self.baro1 << 8) + self.baro2
+        # note this is in hPa
+        self.baro = (data[10] << 8) + data[11]
         self.forecast = data[12]
         self.rssi_byte = data[13]
         self.battery = self.rssi_byte & 0x0f
@@ -1246,3 +1268,186 @@ class TempHumidBaro(SensorPacket):
             self.forecast_string = self.FORECAST_TYPES[self.forecast]
         else:
             self.forecast_string = self.FORECAST_TYPES[-1]
+
+
+#################
+#
+##################
+
+class RainGauge(SensorPacket):
+
+    TYPES = {
+        0x01: "RGR126/682/918",
+        0x02: "PCR800",
+        0x03: "TFA",
+        0x04: "UPM RG700",
+        0x05: "WS2300"}
+
+    def __init__(self):
+        """Constructor"""
+        super(RainGauge, self).__init__()
+        self.id1 = None
+        self.id2 = None
+        self.rainrate1 = None
+        self.rainrate2 = None
+        self.rainrate = None
+        self.raintotal1 = None
+        self.raintotal2 = None
+        self.raintotal3 = None
+        self.raintotal = None
+        self.battery = None
+
+    def load_receive(self, data):
+        """Load data from a bytearray"""
+        self.data = data
+        self.packetlength = data[0]
+        self.packettype = data[1]
+        self.subtype = data[2]
+        self.seqnbr = data[3]
+        self.id1 = data[4]
+        self.id2 = data[5]
+        self.rainrate1 = data[6]
+        self.rainrate2 = data[7]
+        self.rainrate = ((self.rainrate1 << 8) + self.rainrate2) / 1000.0
+        self.raintotal1 = data[8]
+        self.raintotal2 = data[9]
+        self.raintotal3 = data[10]
+        self.raintotal = float((self.raintotal1 << 16) +
+                               (self.raintotal2 << 8) +
+                               self.raintotal3) / 10
+        self.rssi_byte = data[11]
+        self.battery = self.rssi_byte & 0x0f
+        self.rssi = self.rssi_byte >> 4
+        self._set_strings()
+
+    def _set_strings(self):
+        """Translate loaded numeric values into convenience strings"""
+        self.id_string = "{0:02x}:{1:02x}".format(self.id1, self.id2)
+        if self.subtype in self.TYPES:
+            self.type_string = self.TYPES[self.subtype]
+        else:
+            #Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
+                                                         self.subtype)
+
+#################
+#
+##################
+
+class Wind(SensorPacket):
+
+    TYPES = {
+        0x01:"WTGR800",
+        0x02:"WGR800",
+        0x03:"STR918, WGR918",
+        0x04:"TFA (WIND4)",
+        0x05:"UPM WDS500",
+        0x06:"WS2300"}
+
+    def __str__(self):
+        return (("Wind [subtype={0}, seqnbr={1}, id={2}, direction={3}, " +
+                 "average_speed={4}, gust={5}, battery={6}, rssi={7}]").
+                format(self.type_string, self.seqnbr, self.id_string,
+                       self.direction,
+                       self.average_speed, self.gust,
+                       self.battery, self.rssi))
+
+    def __init__(self):
+        """Constructor"""
+        super(Wind, self).__init__()
+        self.id1 = None
+        self.id2 = None
+        self.direction = None
+        self.average_speed = None
+        self.gust = None
+        self.battery = None
+        self.rssi = None
+
+    def load_receive(self, data):
+        """Load data from a bytearray"""
+        self.data = data
+        self.packetlength = data[0]
+        self.packettype = data[1]
+        self.subtype = data[2]
+        self.seqnbr = data[3]
+        self.id1 = data[4]
+        self.id2 = data[5]
+        self.direction1 = data[6]
+        self.direction2 = data[7]
+        self.direction = (self.direction1 << 8) + self.direction2
+        # wind units are decimeters/second
+        self.av1 = data[8]
+        self.av2 = data[9]
+        # makes this meters per second
+        self.average_speed = ((self.av1 << 8) + self.av2) / 10.0
+        self.gust1 = data[10]
+        self.gust2 = data[11]
+        self.gust = ((self.gust1 << 8) + self.gust2) / 10.0
+
+        if self.subtype == 0x03:
+            self.battery = (data[16] + 1) * 10
+        else:
+            self.rssi_byte = data[16]
+            self.battery = self.rssi_byte & 0x0f
+            self.rssi = self.rssi_byte >> 4
+
+        self._set_strings()
+
+    def _set_strings(self):
+        """Translate loaded numeric values into convenience strings"""
+        self.id_string = "{0:02x}:{1:02x}".format(self.id1, self.id2)
+        if self.subtype in self.TYPES:
+            self.type_string = self.TYPES[self.subtype]
+        else:
+            #Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
+                                                         self.subtype)
+
+#################
+#
+##################
+
+class UV(SensorPacket):
+
+    TYPES = {
+        0x01: "UVN128, UV138",
+        0x02: "UVN800",
+        0x03: "TFA"}
+
+    def __init__(self):
+        """Constructor"""
+        super(UV, self).__init__()
+        self.id1 = None
+        self.id2 = None
+        self.uv1 = None
+        self.uv2 = None
+        self.uv = None
+        self.battery = None
+        self.rssi = None
+
+    def load_receive(self, data):
+        """Load data from a bytearray"""
+        self.data = data
+        self.packetlength = data[0]
+        self.packettype = data[1]
+        self.subtype = data[2]
+        self.seqnbr = data[3]
+        self.id1 = data[4]
+        self.id2 = data[5]
+        self.uv1 = data[6]
+        self.uv2 = data[7]
+        self.uv = (self.uv1 << 8) + self.uv2
+        self.rssi_byte = data[8]
+        self.battery = self.rssi_byte & 0x0f
+        self.rssi = self.rssi_byte >> 4
+        self._set_strings()
+
+    def _set_strings(self):
+        """Translate loaded numeric values into convenience strings"""
+        self.id_string = "{0:02x}:{1:02x}".format(self.id1, self.id2)
+        if self.subtype in self.TYPES:
+            self.type_string = self.TYPES[self.subtype]
+        else:
+            #Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
+                                                         self.subtype)
