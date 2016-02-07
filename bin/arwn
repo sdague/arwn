@@ -20,7 +20,7 @@ import logging
 def parse_args():
     parser = argparse.ArgumentParser('arwn')
     parser.add_argument('-f', 'foreground',
-                        help="run in foreground (don't daemonize)"
+                        help="run in foreground (don't daemonize)",
                         action='store_true', default=False)
     parser.add_argument('-c', 'config',
                         help="config file name",
