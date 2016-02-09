@@ -35,11 +35,15 @@ def parse_args():
     return parser.parse_args()
 
 
-def setup_logger(logfile):
+def setup_logger(logfile=None):
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler(logfile)
-    formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+    formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: "
+                                  "%(message)s")
+    if logfile is not None:
+        fh = logging.FileHandler(logfile)
+    else:
+        fh = logging.StreamHandler(sys.stdout)
     fh.setFormatter(formatter)
     logger.addHandler(fh)
     return fh, logger
@@ -56,8 +60,8 @@ def event_loop(config):
 def main():
     args = parse_args()
     config = yaml.load(open(args.config, 'r').read())
-    fh, logger = setup_logger(config['logfile'])
     if not args.foreground:
+        fh, logger = setup_logger(config['logfile'])
         try:
             with daemon.DaemonContext(files_preserve=[fh.stream, sys.stdout]):
                 logger.debug("Starting arwn in daemon mode")
@@ -65,7 +69,7 @@ def main():
         except Exception:
             logger.exception("Something went wrong!")
     else:
-        # TODO: log to stdout in these cases
+        fh, logger = setup_logger()
         logger.debug("Starting arwn in foreground")
         event_loop(config)
 

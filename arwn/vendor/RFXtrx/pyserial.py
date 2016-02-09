@@ -27,7 +27,7 @@ from serial import Serial
 from time import sleep
 from . import RFXtrxTransport
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class PySerialTransport(RFXtrxTransport):
