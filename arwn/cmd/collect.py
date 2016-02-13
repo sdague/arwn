@@ -72,7 +72,3 @@ def main():
         fh, logger = setup_logger()
         logger.debug("Starting arwn in foreground")
         event_loop(config)
-
-
-if __name__ == "__main__":
-    sys.exit(main())

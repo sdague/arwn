@@ -22,6 +22,8 @@ requirements = [
 ]
 
 test_requirements = [
+    'mock',
+    'fixtures'
     # TODO: put package test requirements here
 ]
 
@@ -35,11 +37,11 @@ setup(
     author="Sean Dague",
     author_email='sean@dague.net',
     url='https://github.com/sdague/arwn',
-    packages=['arwn', 'arwn.vendor', 'arwn.vendor.RFXtrx'],
+    packages=['arwn', 'arwn.cmd', 'arwn.vendor', 'arwn.vendor.RFXtrx'],
     package_dir={
         'arwn': 'arwn',
     },
-    scripts=['bin/arwn-collect.py'],
+    scripts=['bin/arwn-collect'],
     include_package_data=True,
     install_requires=requirements,
     license="ISCL",
