@@ -1,7 +1,11 @@
 
+
 import os.path
+import subprocess
+import time
 
 import fixtures
+import paho.mqtt.client as mqtt
 
 
 class CaptureStdout(fixtures.Fixture):
@@ -45,3 +49,48 @@ names:
     @property
     def path(self):
         return self._path
+
+
+class MosquittoSetupFail(Exception):
+    pass
+
+
+class MosquittoReal(fixtures.Fixture):
+
+    def _pick_port(self):
+        import socket
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind(('localhost', 0))
+        addr, self.port = s.getsockname()
+        s.close()
+
+    def setUp(self):
+        super(MosquittoReal, self).setUp()
+        tmpdir = self.useFixture(fixtures.TempDir()).path
+        self._pick_port()
+        config = os.path.join(tmpdir, "mqtt.conf")
+        with open(config, 'w') as f:
+            f.write("""
+pid_file %(tmpdir)s/mosquitto.pid
+persistence true
+persistence_location %(tmpdir)s
+log_dest file %(tmpdir)s/mosquitto.log
+listener %(port)d
+""" % {'tmpdir': tmpdir, 'port': self.port})
+
+        try:
+            self.mqtt = subprocess.Popen(["mosquitto", "-c", config])
+        except OSError:
+            raise MosquittoSetupFail("Couldn't find installed mosquitto")
+        self.addCleanup(self.mqtt.kill)
+
+        for x in range(10):
+            try:
+                c = mqtt.Client()
+                c.connect("localhost", self.port)
+                c.disconnect()
+                break
+            except:
+                time.sleep(1)
+        else:
+            raise MosquittoSetupFail("couldn't start mosquitto")
