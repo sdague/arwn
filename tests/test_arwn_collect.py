@@ -8,17 +8,15 @@ test_arwn
 Tests for `arwn` module.
 """
 
-import os.path
 import sys
 
-import fixtures
 import mock
 import testtools
 import unittest
 
 from arwn.cmd import collect
 
-import arwn_fixtures
+from . import arwn_fixtures
 
 
 class TestArwnCollect(testtools.TestCase):
