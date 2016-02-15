@@ -84,13 +84,13 @@ listener %(port)d
             raise MosquittoSetupFail("Couldn't find installed mosquitto")
         self.addCleanup(self.mqtt.kill)
 
-        for x in range(10):
+        for x in range(100):
             try:
                 c = mqtt.Client()
                 c.connect("localhost", self.port)
                 c.disconnect()
                 break
             except:
-                time.sleep(1)
+                time.sleep(0.1)
         else:
             raise MosquittoSetupFail("couldn't start mosquitto")
