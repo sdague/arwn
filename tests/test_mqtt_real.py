@@ -50,7 +50,7 @@ class TestMqttSpawn(testtools.TestCase):
             time.sleep(0.1)
             client.loop_read()
         self.assertTrue(self.connected, "Did not seem to connect")
-        self.assertEqual("foo", self.received.payload)
+        self.assertEqual("foo", self.received.payload.decode(encoding='UTF-8'))
         self.assertEqual("foo/start", self.received.topic)
 
 
