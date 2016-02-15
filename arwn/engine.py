@@ -147,7 +147,7 @@ class Dispatcher(object):
             try:
                 event = self.transport.receive_blocking()
                 unparsable = 0
-            except IndexError:
+            except Exception:
                 logger.exception("Got an unparsable byte")
                 unparsable += 1
                 if unparsable > 10:
