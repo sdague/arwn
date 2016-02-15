@@ -54,6 +54,9 @@ names:
 class MosquittoSetupFail(Exception):
     pass
 
+class MosquittoFail(Exception):
+    pass
+
 
 class MosquittoReal(fixtures.Fixture):
 
@@ -93,4 +96,4 @@ listener %(port)d
             except:
                 time.sleep(0.1)
         else:
-            raise MosquittoSetupFail("couldn't start mosquitto")
+            raise MosquittoFail("couldn't start mosquitto")
