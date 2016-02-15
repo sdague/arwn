@@ -141,8 +141,19 @@ class Dispatcher(object):
         self.mqtt = MQTT(server)
 
     def loopforever(self):
+        unparsable = 0
+
         while True:
-            event = self.transport.receive_blocking()
+            try:
+                event = self.transport.receive_blocking()
+                unparsable = 0
+            except IndexError:
+                logger.exception("Got an unparsable byte")
+                unparsable += 1
+                if unparsable > 10:
+                    raise
+                continue
+
             logger.debug(event)
 
             if event is None:
