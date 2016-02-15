@@ -54,6 +54,7 @@ names:
 class MosquittoSetupFail(Exception):
     pass
 
+
 class MosquittoFail(Exception):
     pass
 
