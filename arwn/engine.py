@@ -104,14 +104,29 @@ class SensorPacket(object):
 
 
 class MQTT(object):
-    def __init__(self, server):
+    def __init__(self, server, port=1883):
         client = paho.Client()
-        # client.on_connect = on_connect
-        # client.on_message = on_message
-        client.connect(server, 1883)
+        self.server = server
+        self.port = port
+        self.root = "arwn2"
+        self.status_topic = "%s/status" % self.root
+
+        def on_connect(client, userdata, flags, rc):
+            status = {'status': 'alive', 'timestamp': int(time.time())}
+            status_dead = {'status': 'dead'}
+            client.publish(
+                self.status_topic, json.dumps(status), qos=2, retain=True)
+            client.will_set(self.status_topic,
+                            json.dumps(status_dead), retain=True)
+
+        client.on_connect = on_connect
+        client.connect(self.server, self.port)
         client.loop_start()
         self.client = client
-        self.root = "arwn2"
+
+    def reconnect(self):
+        self.client.disconnect()
+        self.client.connect(self.server, self.port)
 
     def send(self, topic, payload):
         topic = "%s/%s" % (self.root, topic)
