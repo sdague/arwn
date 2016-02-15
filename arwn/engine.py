@@ -68,7 +68,7 @@ class SensorPacket(object):
         self.sig = sig
         self.sensor_id = sensor_id
         self.data = {}
-        self.data.extend(kwargs)
+        self.data.update(kwargs)
 
     def from_packet(self, packet):
         self._set_type(packet)
@@ -98,8 +98,8 @@ class SensorPacket(object):
 
     def as_json(self, **kwargs):
         data = dict(bat=self.bat, sig=self.sig, sensor_id=self.sensor_id)
-        data.extend(self.data)
-        data.extend(kwargs)
+        data.update(self.data)
+        data.update(kwargs)
         return data
 
 
