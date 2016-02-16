@@ -82,14 +82,32 @@ class TestMQTTLifecycle(testtools.TestCase):
         client.on_message = on_message
         client.connect("localhost", mos.port)
         client.loop_start()
+        # force a failure, this triggers the will. We have to force a
+        # sleep before the socket close otherwise the will can
+        # actually process as the first message because of the lack of
+        # order guaruntees.
         time.sleep(0.1)
+        mq.client.socket().close()
         mq.client.reconnect()
         time.sleep(0.1)
 
-        self.assertEqual(self.received[0]["%s/status" % mq.root]['status'],
-                         'alive')
-        self.assertEqual(self.received[1]["%s/status" % mq.root]['status'],
-                         'alive')
+        self.assertEqual(3, len(self.received), self.received)
+
+        self.assertEqual(
+            self.received[0]["%s/status" % mq.root]['status'],
+            'alive',
+            self.received[0]
+        )
+        self.assertEqual(
+            self.received[1]["%s/status" % mq.root]['status'],
+            'dead',
+            self.received[1]
+        )
+        self.assertEqual(
+            self.received[2]["%s/status" % mq.root]['status'],
+            'alive',
+            self.received[2]
+        )
 
 
 if __name__ == '__main__':

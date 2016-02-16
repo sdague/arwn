@@ -113,12 +113,14 @@ class MQTT(object):
 
         def on_connect(client, userdata, flags, rc):
             status = {'status': 'alive', 'timestamp': int(time.time())}
-            status_dead = {'status': 'dead'}
             client.publish(
                 self.status_topic, json.dumps(status), qos=2, retain=True)
             client.will_set(self.status_topic,
                             json.dumps(status_dead), retain=True)
 
+        status_dead = {'status': 'dead'}
+        client.will_set(self.status_topic,
+                        json.dumps(status_dead), qos=2, retain=True)
         client.on_connect = on_connect
         client.connect(self.server, self.port)
         client.loop_start()
