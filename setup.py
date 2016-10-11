@@ -31,7 +31,7 @@ test_requirements.extend(requirements)
 
 setup(
     name='arwn',
-    version='0.1.0',
+    version='1.0.0',
     description="Collect 433Mhz weather sensor data and publish to mqtt",
     long_description=readme + '\n\n' + history,
     author="Sean Dague",
@@ -44,13 +44,13 @@ setup(
     scripts=['bin/arwn-collect'],
     include_package_data=True,
     install_requires=requirements,
-    license="ISCL",
+    license="Apache 2",
     zip_safe=False,
     keywords='arwn',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: ISC License (ISCL)',
+        'License :: OSI Approved :: Apache Software License License',
         'Natural Language :: English',
         "Programming Language :: Python :: 2",
         'Programming Language :: Python :: 2.7',
