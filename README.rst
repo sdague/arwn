@@ -15,7 +15,7 @@ Ambient Radio Weather Network
 
 Collect 433Mhz weather sensor data and publish to mqtt
 
-* Free software: ISC license
+* Free software: Apache license
 * Documentation: https://arwn.readthedocs.org.
 
 Features
@@ -26,7 +26,4 @@ Features
 Credits
 ---------
 
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
-
-.. _Cookiecutter: https://github.com/audreyr/cookiecutter
-.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
+Sean Dague
