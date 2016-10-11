@@ -53,7 +53,9 @@ def event_loop(config):
     dispatcher = engine.Dispatcher(
         config['device'],
         config['names'],
-        config['mqtt']['server'])
+        config['mqtt']['server'],
+        config
+    )
     dispatcher.loopforever()
 
 

@@ -2,8 +2,11 @@
 import datetime
 import logging
 import re
+import time
+import urllib
+import urllib2
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 LAST_RAIN_TOTAL = None
 LAST_RAIN = None
@@ -76,13 +79,86 @@ class ComputeRainTotal(MQTTAction):
         client.send("rain/today", since_midnight)
 
 
+class WeatherUnderground(MQTTAction):
+    regex = "^\w+/(wind|temperature/Outside|rain/today|barometer)$"
+    temp = None
+    dewpoint = None
+    rain = None
+    pressure = None
+    winddir = None
+    windspeed = None
+    windgust = None
+
+    def is_ready(self):
+        return (self.temp is not None and
+                self.dewpoint is not None and
+                self.rain is not None and
+                self.pressure is not None and
+                self.winddir is not None and
+                self.windspeed is not None and
+                self.windgust is not None)
+
+    def action(self, client, topic, payload):
+        if 'wind' in topic:
+            self.winddir = payload['direction']
+            self.windspeed = payload['speed']
+            self.windgust = payload['gust']
+        if 'temperature' in topic:
+            self.temp = payload['temp']
+            self.dewpoint = payload['dewpoint']
+            self.humid = payload['humid']
+        if 'barometer' in topic:
+            self.pressure = payload['pressure']
+        if 'rain' in topic:
+            self.rain = payload['since_midnight']
+
+        if self.is_ready():
+            self.send_to_wunderground(client)
+        else:
+            logger.info("Wunderground not ready yet: %s" % self)
+
+    def send_to_wunderground(self, client):
+        hpa2inhg = 0.0295301
+        BASEURL = "http://weatherstation.wunderground.com/" \
+                  "weatherstation/updateweatherstation.php"
+        data = {
+            'ID': client.config['wunderground']['station'],
+            'PASSWORD': client.config['wunderground']['passwd'],
+            'dateutc': 'now',
+            'action': 'updateraw',
+            'software': 'pyhome 0.1',
+            'tempf': self.temp,
+            'dewptf': self.dewpoint,
+            'humidity': self.humid,
+            'dailyrainin': self.rain,
+            'baromin': self.pressure * hpa2inhg,
+            'winddir': self.winddir,
+            'windspeedmph': self.windspeed,
+            'windgustmph': self.windgust
+        }
+
+        params = urllib.urlencode(data)
+        # print data
+        resp = urllib2.urlopen("%s?%s" % (BASEURL, params))
+        if resp.getcode() != 200:
+            logger.error("Failed to upload to wunderground: %s - %s" %
+                         (params, resp.info()))
+
+    def __repr__(self):
+        return ("Wunderground((temp: %s, dewpoint: %s, rain: %s "
+                "pressure: %s, winddir: %s, windspeed: %s, windgust: %s))" %
+                (self.temp, self.dewpoint, self.rain, self.pressure,
+                 self.winddir, self.windspeed, self.windgust))
+
+
 def setup():
     global HANDLERS
     HANDLERS = [
         RecordRainTotal(),
         UpdateTodayRain(),
         InitializeLastRainIfNotThere(),
-        ComputeRainTotal()
+        ComputeRainTotal(),
+        WeatherUnderground()
     ]
 
 

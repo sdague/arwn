@@ -81,6 +81,7 @@ class SensorPacket(object):
             temp = temperature.Temperature("%sC" % packet.temp).as_F()
             self.data['temp'] = round(temp.to_F(), 1)
             self.data['dewpoint'] = round(temp.dewpoint(packet.humidity), 1)
+            self.data['humid'] = round(packet.humidity, 1)
             self.data['units'] = 'F'
         if self.stype & IS_BARO:
             self.data['pressure'] = packet.baro
@@ -106,11 +107,12 @@ class SensorPacket(object):
 
 
 class MQTT(object):
-    def __init__(self, server, port=1883):
+    def __init__(self, server, config, port=1883):
         client = paho.Client()
         handlers.setup()
         self.server = server
         self.port = port
+        self.config = config
         self.root = "arwn2"
         self.status_topic = "%s/status" % self.root
 
@@ -146,11 +148,12 @@ class MQTT(object):
 
 
 class Dispatcher(object):
-    def __init__(self, device, names, server):
+    def __init__(self, device, names, server, config):
         self.transport = PySerialTransport(device, debug=True)
         self.transport.reset()
         self.names = names
-        self.mqtt = MQTT(server)
+        self.mqtt = MQTT(server, config)
+        self.config = config
 
     def loopforever(self):
         unparsable = 0
