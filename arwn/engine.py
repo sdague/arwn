@@ -20,6 +20,7 @@ import time
 import paho.mqtt.client as paho
 
 from arwn import temperature
+from arwn import handlers
 from arwn.vendor.RFXtrx import lowlevel as ll
 from arwn.vendor.RFXtrx.pyserial import PySerialTransport
 
@@ -30,9 +31,6 @@ IS_TEMP = 1 << 0
 IS_BARO = 1 << 1
 IS_WIND = 1 << 2
 IS_RAIN = 1 << 3
-
-LAST_RAIN_TOTAL = None
-LAST_RAIN = None
 
 
 class SensorPacket(object):
@@ -110,6 +108,7 @@ class SensorPacket(object):
 class MQTT(object):
     def __init__(self, server, port=1883):
         client = paho.Client()
+        handlers.setup()
         self.server = server
         self.port = port
         self.root = "arwn2"
@@ -124,39 +123,8 @@ class MQTT(object):
                             json.dumps(status_dead), retain=True)
 
         def on_message(client, userdata, msg):
-            global LAST_RAIN_TOTAL
-            global LAST_RAIN
             payload = json.loads(msg.payload)
-
-            if msg.topic == "%s/totals/rain" % self.root:
-                LAST_RAIN_TOTAL = payload
-            if msg.topic == "%s/rain" % self.root:
-                logger.debug(LAST_RAIN_TOTAL)
-                logger.debug(payload)
-                if not LAST_RAIN:
-                    LAST_RAIN = payload
-                    return True
-                if not LAST_RAIN_TOTAL:
-                    self.send("totals/rain", payload, retain=True)
-                    return True
-
-                # all the data is set now
-                lastr = LAST_RAIN_TOTAL
-                logger.warn("type %s, %s" % (type(lastr), lastr))
-                logger.debug("%s" % lastr['timestamp'])
-                last_day = datetime.datetime.fromtimestamp(
-                    lastr['timestamp']).strftime('%j')
-                newr = payload
-                today = datetime.datetime.fromtimestamp(
-                    newr['timestamp']).strftime('%j')
-                logger.debug("%s - %s" % (today, last_day))
-                if (int(today) - int(last_day)) > 1:
-                    self.send("totals/rain", LAST_RAIN, retain=True)
-                since_midnight = {
-                    "timestamp": newr["timestamp"],
-                    "since_midnight": newr["total"] - lastr["total"]}
-                self.send("rain/today", since_midnight)
-                LAST_RAIN = payload
+            handlers.run(self, msg.topic, payload)
             return True
 
         status_dead = {'status': 'dead'}
