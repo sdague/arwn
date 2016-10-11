@@ -15,8 +15,9 @@
 import datetime
 import logging
 import re
-import urllib
-import urllib2
+
+import six.moves.urllib.parse as urllib
+import six.moves.urllib.request as request
 
 logger = logging.getLogger(__name__)
 
@@ -151,7 +152,7 @@ class WeatherUnderground(MQTTAction):
 
         params = urllib.urlencode(data)
         # print data
-        resp = urllib2.urlopen("%s?%s" % (BASEURL, params))
+        resp = request.urlopen("%s?%s" % (BASEURL, params))
         if resp.getcode() != 200:
             logger.error("Failed to upload to wunderground: %s - %s" %
                          (params, resp.info()))
