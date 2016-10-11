@@ -12,6 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import datetime
 import json
 import logging
 import time
@@ -29,6 +30,9 @@ IS_TEMP = 1 << 0
 IS_BARO = 1 << 1
 IS_WIND = 1 << 2
 IS_RAIN = 1 << 3
+
+LAST_RAIN_TOTAL = None
+LAST_RAIN = None
 
 
 class SensorPacket(object):
@@ -113,15 +117,53 @@ class MQTT(object):
 
         def on_connect(client, userdata, flags, rc):
             status = {'status': 'alive', 'timestamp': int(time.time())}
+            client.subscribe("%s/#" % self.root)
             client.publish(
                 self.status_topic, json.dumps(status), qos=2, retain=True)
             client.will_set(self.status_topic,
                             json.dumps(status_dead), retain=True)
 
+        def on_message(client, userdata, msg):
+            global LAST_RAIN_TOTAL
+            global LAST_RAIN
+            payload = json.loads(msg.payload)
+
+            if msg.topic == "%s/totals/rain" % self.root:
+                LAST_RAIN_TOTAL = payload
+            if msg.topic == "%s/rain" % self.root:
+                logger.debug(LAST_RAIN_TOTAL)
+                logger.debug(payload)
+                if not LAST_RAIN:
+                    LAST_RAIN = payload
+                    return True
+                if not LAST_RAIN_TOTAL:
+                    self.send("totals/rain", payload, retain=True)
+                    return True
+
+                # all the data is set now
+                lastr = LAST_RAIN_TOTAL
+                logger.warn("type %s, %s" % (type(lastr), lastr))
+                logger.debug("%s" % lastr['timestamp'])
+                last_day = datetime.datetime.fromtimestamp(
+                    lastr['timestamp']).strftime('%j')
+                newr = payload
+                today = datetime.datetime.fromtimestamp(
+                    newr['timestamp']).strftime('%j')
+                logger.debug("%s - %s" % (today, last_day))
+                if (int(today) - int(last_day)) > 1:
+                    self.send("totals/rain", LAST_RAIN, retain=True)
+                since_midnight = {
+                    "timestamp": newr["timestamp"],
+                    "since_midnight": newr["total"] - lastr["total"]}
+                self.send("rain/today", since_midnight)
+                LAST_RAIN = payload
+            return True
+
         status_dead = {'status': 'dead'}
         client.will_set(self.status_topic,
                         json.dumps(status_dead), qos=2, retain=True)
         client.on_connect = on_connect
+        client.on_message = on_message
         client.connect(self.server, self.port)
         client.loop_start()
         self.client = client
@@ -130,9 +172,9 @@ class MQTT(object):
         self.client.disconnect()
         self.client.connect(self.server, self.port)
 
-    def send(self, topic, payload):
+    def send(self, topic, payload, retain=False):
         topic = "%s/%s" % (self.root, topic)
-        self.client.publish(topic, json.dumps(payload))
+        self.client.publish(topic, json.dumps(payload), retain=retain)
 
 
 class Dispatcher(object):
