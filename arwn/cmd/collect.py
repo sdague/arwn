@@ -34,6 +34,12 @@ def parse_args():
     parser.add_argument('-c', '--config',
                         help="config file name",
                         default='config.yml')
+    parser.add_argument('-l', '--logfile',
+                        help="log file name",
+                        default='arwn.log')
+    parser.add_argument('-p', '--piddir',
+                        help="pid file name",
+                        default=os.getcwd())
     return parser.parse_args()
 
 
@@ -65,11 +71,11 @@ def main():
     args = parse_args()
     config = yaml.load(open(args.config, 'r').read())
     if not args.foreground:
-        fh, logger = setup_logger(config['logfile'])
+        fh, logger = setup_logger(config.get('logfile', args.logfile))
         try:
             with daemon.DaemonContext(
                     files_preserve=[fh.stream, sys.stdout],
-                    pidfile=pid.PidFile('arwn', os.getcwd())):
+                    pidfile=pid.PidFile('arwn', args.piddir)):
                 logger.debug("Starting arwn in daemon mode")
                 event_loop(config)
         except Exception:
