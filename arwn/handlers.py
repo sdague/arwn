@@ -86,9 +86,12 @@ class ComputeRainTotal(MQTTAction):
         if delta_days > 1 or delta_days < -300:
             client.send("totals/rain", LAST_RAIN, retain=True)
 
+        delta_rain = newr["total"] - lastr["total"]
+        if delta_rain < 0:
+            delta_rain = 0
         since_midnight = {
             "timestamp": newr["timestamp"],
-            "since_midnight": newr["total"] - lastr["total"]}
+            "since_midnight": delta_rain}
         client.send("rain/today", since_midnight)
 
 
