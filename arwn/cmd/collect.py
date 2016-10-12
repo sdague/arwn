@@ -17,6 +17,8 @@
 import argparse
 import daemon
 import logging
+import pid
+import os
 import sys
 
 import yaml
@@ -65,7 +67,9 @@ def main():
     if not args.foreground:
         fh, logger = setup_logger(config['logfile'])
         try:
-            with daemon.DaemonContext(files_preserve=[fh.stream, sys.stdout]):
+            with daemon.DaemonContext(
+                    files_preserve=[fh.stream, sys.stdout],
+                    pidfile=pid.PidFile('arwn', os.getcwd())):
                 logger.debug("Starting arwn in daemon mode")
                 event_loop(config)
         except Exception:

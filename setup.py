@@ -19,6 +19,7 @@ requirements = [
     'python-daemon',
     'paho-mqtt>=1.1',
     'pyserial>=3',
+    'pid>=2',
     'six',
 ]
 
