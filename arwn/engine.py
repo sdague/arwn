@@ -112,7 +112,7 @@ class MQTT(object):
         self.server = server
         self.port = port
         self.config = config
-        self.root = "arwn2"
+        self.root = "arwn"
         self.status_topic = "%s/status" % self.root
 
         def on_connect(client, userdata, flags, rc):
