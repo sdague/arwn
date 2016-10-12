@@ -148,7 +148,7 @@ class MQTT(object):
 
 class Dispatcher(object):
     def __init__(self, device, names, server, config):
-        self.transport = PySerialTransport(device, debug=True)
+        self.transport = PySerialTransport(device)
         self.transport.reset()
         self.names = names
         self.mqtt = MQTT(server, config)

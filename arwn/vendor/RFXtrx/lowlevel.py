@@ -25,7 +25,7 @@ RFXtrx.
 
 import logging
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 def parse(data):
