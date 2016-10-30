@@ -142,7 +142,7 @@ class WeatherUnderground(MQTTAction):
             'PASSWORD': client.config['wunderground']['passwd'],
             'dateutc': 'now',
             'action': 'updateraw',
-            'software': 'pyhome 0.1',
+            'software': 'arwn 1.1.0',
             'tempf': self.temp,
             'dewptf': self.dewpoint,
             'humidity': self.humid,
