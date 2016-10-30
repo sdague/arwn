@@ -73,7 +73,7 @@ class SensorPacket(object):
 
     def from_packet(self, packet):
         self._set_type(packet)
-        self.bat = packet.battery
+        self.bat = getattr(packet, 'battery', -1)
         self.sig = packet.rssi
         self.sensor_id = packet.id_string
         if self.stype & IS_TEMP:
