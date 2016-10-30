@@ -19,6 +19,8 @@ import re
 import six.moves.urllib.parse as urllib
 import six.moves.urllib.request as request
 
+import arwn
+
 logger = logging.getLogger(__name__)
 
 LAST_RAIN_TOTAL = None
@@ -142,7 +144,7 @@ class WeatherUnderground(MQTTAction):
             'PASSWORD': client.config['wunderground']['passwd'],
             'dateutc': 'now',
             'action': 'updateraw',
-            'software': 'arwn 1.1.0',
+            'software': 'arwn %s' % (arwn.__version__),
             'tempf': self.temp,
             'dewptf': self.dewpoint,
             'humidity': self.humid,
