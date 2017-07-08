@@ -58,12 +58,7 @@ def setup_logger(logfile=None):
 
 
 def event_loop(config):
-    dispatcher = engine.Dispatcher(
-        config['device'],
-        config['names'],
-        config['mqtt']['server'],
-        config
-    )
+    dispatcher = engine.Dispatcher(config)
     dispatcher.loopforever()
 
 

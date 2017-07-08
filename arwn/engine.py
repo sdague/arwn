@@ -198,7 +198,7 @@ class MQTT(object):
         self.client.publish(topic, json.dumps(payload), retain=retain)
 
 
-class SerialCollector(object):
+class RFXCOMCollector(object):
 
     def __init__(self, device):
         self.transport = PySerialTransport(device)
@@ -244,18 +244,21 @@ class RTL433Collector(object):
 
 
 class Dispatcher(object):
-    def __init__(self, device, names, server, config):
-        self.collector = RTL433Collector()
-        # self.transport = PySerialTransport(device)
-        # self.transport.reset()
-        self.names = names
+    def __init__(self, config):
+        ctype = config["collector"]["type"]
+        if ctype == "rtl433":
+            self.collector = RTL433Collector()
+        elif ctype == "rfxcom":
+            device = config["collector"]["device"]
+            self.collector = RFXCOMCollector(device)
+        self.names = config["names"]
+        server = config['mqtt']['server']
         self.mqtt = MQTT(server, config)
         self.config = config
 
     def loopforever(self):
 
-        while True:
-            packet = next(self.collector)
+        for packet in self.collector:
             if packet is None:
                 continue
             now = int(time.time())
