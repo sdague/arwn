@@ -14,6 +14,7 @@
 
 import json
 import logging
+import subprocess
 import time
 
 import paho.mqtt.client as paho
@@ -31,6 +32,13 @@ IS_BARO = 1 << 1
 IS_WIND = 1 << 2
 IS_RAIN = 1 << 3
 
+# List of known sensor models from rtl_433, please feel free to patch
+# and add any that you have here.
+TH_SENSORS = ("THGR810", "THGR122N", "BHTR968")
+WIND_SENSORS = ("WGR800")
+RAIN_SENSORS = ("PCR800")
+BARO_SENSORS = ("BHTR968")
+
 
 class SensorPacket(object):
     """Convert RFXtrx packet to native packet for ARWN"""
@@ -38,6 +46,18 @@ class SensorPacket(object):
     def _set_type(self, packet):
         if self.stype != IS_NONE:
             return
+        if isinstance(packet, dict):
+            model = packet.get("model", "")
+            if model in TH_SENSORS:
+                self.stype |= IS_TEMP
+            if model in BARO_SENSORS:
+                self.stype |= IS_BARO
+            if model in RAIN_SENSORS:
+                self.stype |= IS_RAIN
+            if model in WIND_SENSORS:
+                self.stype |= IS_WIND
+
+        # if this is an RFXCOM packet
         if isinstance(packet, ll.TempHumid):
             self.stype |= IS_TEMP
         if isinstance(packet, ll.TempHumidBaro):
@@ -70,6 +90,38 @@ class SensorPacket(object):
         self.sensor_id = sensor_id
         self.data = {}
         self.data.update(kwargs)
+
+    def from_json(self, data):
+        self._set_type(data)
+        self.bat = data.get("battery", "NA")
+
+        if "id" in data:
+            self.sensor_id = "%2.2x:%2.2x" % (data['id'], data['channel'])
+        elif "sid" in data:
+            self.sensor_id = "%2.2x:%2.2x" % (data['sid'], data['channel'])
+        if self.stype & IS_TEMP:
+            temp = temperature.Temperature(
+                "%sC" % data['temperature_C']).as_F()
+            self.data['temp'] = round(temp.to_F(), 1)
+            self.data['dewpoint'] = round(temp.dewpoint(data['humidity']), 1)
+            self.data['humid'] = round(data['humidity'], 1)
+            self.data['units'] = 'F'
+        if self.stype & IS_BARO:
+            self.data['pressure'] = data['pressure_hPa']
+            self.data['units'] = 'mbar'
+        if self.stype & IS_RAIN:
+            # rtl_433 already converts to non metric here
+            self.data['total'] = data['rain_total']
+            self.data['rate'] = data['rain_rate']
+            self.data['units'] = 'in'
+        if self.stype & IS_WIND:
+            mps2mph = 2.23694
+            speed = round(float(data['average']) * mps2mph, 1)
+            gust = round(float(data['gust']) * mps2mph, 1)
+            self.data['direction'] = data['direction']
+            self.data['speed'] = speed
+            self.data['gust'] = gust
+            self.data['units'] = 'mph'
 
     def from_packet(self, packet):
         self._set_type(packet)
@@ -112,7 +164,7 @@ class MQTT(object):
         self.server = server
         self.port = port
         self.config = config
-        self.root = "arwn"
+        self.root = "arwn_rtl"
         self.status_topic = "%s/status" % self.root
 
         def on_connect(client, userdata, flags, rc):
@@ -146,44 +198,71 @@ class MQTT(object):
         self.client.publish(topic, json.dumps(payload), retain=retain)
 
 
-class Dispatcher(object):
-    def __init__(self, device, names, server, config):
+class SerialCollector(object):
+
+    def __init__(self, device):
         self.transport = PySerialTransport(device)
         self.transport.reset()
+        self.unparsable = 0
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        try:
+            event = self.transport.receive_blocking()
+            self.unparsable = 0
+        except Exception:
+            logger.exception("Got an unparsable byte")
+            self.unparsable += 1
+            if self.unparsable > 10:
+                raise
+            return None
+        logger.debug(event)
+        # general case, temp, rain, wind
+        packet = SensorPacket()
+        packet.from_packet(event.device.pkt)
+        return packet
+
+
+class RTL433Collector(object):
+    def __init__(self):
+        self.rtl = subprocess.Popen(["rtl_433", "-F", "json"],
+                                    stdout=subprocess.PIPE,
+                                    stdin=subprocess.PIPE)
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        line = self.rtl.stdout.readline()
+        data = json.loads(line)
+        logger.debug(data)
+        packet = SensorPacket()
+        packet.from_json(data)
+        return packet
+
+
+class Dispatcher(object):
+    def __init__(self, device, names, server, config):
+        self.collector = RTL433Collector()
+        # self.transport = PySerialTransport(device)
+        # self.transport.reset()
         self.names = names
         self.mqtt = MQTT(server, config)
         self.config = config
 
     def loopforever(self):
-        unparsable = 0
 
         while True:
-            try:
-                event = self.transport.receive_blocking()
-                unparsable = 0
-            except Exception:
-                logger.exception("Got an unparsable byte")
-                unparsable += 1
-                if unparsable > 10:
-                    raise
-                continue
-
-            logger.debug(event)
-
-            if event is None:
+            packet = next(self.collector)
+            if packet is None:
                 continue
             now = int(time.time())
 
-            # special case. Temp / Humid / Barometer sensors are
-            # turned into 2 sensors, barometer and a temp one.
-            if isinstance(event.device.pkt, ll.TempHumidBaro):
-                b_packet = SensorPacket(stype=IS_BARO)
-                b_packet.from_packet(event.device.pkt)
-                self.mqtt.send("barometer", b_packet.as_json(timestamp=now))
-
-            # general case, temp, rain, wind
-            packet = SensorPacket()
-            packet.from_packet(event.device.pkt)
+            # we send barometer sensors twice
+            if packet.is_baro:
+                self.mqtt.send("barometer", packet.as_json(timestamp=now))
 
             if packet.is_temp:
                 name = self.names.get(packet.sensor_id)
