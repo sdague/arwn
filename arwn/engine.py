@@ -166,7 +166,7 @@ class SensorPacket(object):
             self.data['units'] = 'mph'
 
     def as_json(self, **kwargs):
-        data = dict(bat=self.bat, sig=self.sig, sensor_id=self.sensor_id)
+        data = dict(bat=self.bat, sensor_id=self.sensor_id)
         data.update(self.data)
         data.update(kwargs)
         return data
