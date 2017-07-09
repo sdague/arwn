@@ -66,7 +66,8 @@ class TestMQTTLifecycle(testtools.TestCase):
         except arwn_fixtures.MosquittoSetupFail:
             self.skipTest("Can't start mosquitto")
 
-        mq = arwn.engine.MQTT('localhost', mos.port)
+        config = dict(mqtt={})
+        mq = arwn.engine.MQTT('localhost', config, port=mos.port)
 
         def on_connect(client, userdata, flags, rc):
             client.subscribe("%s/#" % mq.root, qos=2)
