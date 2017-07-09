@@ -31,10 +31,13 @@ IS_TEMP = 1 << 0
 IS_BARO = 1 << 1
 IS_WIND = 1 << 2
 IS_RAIN = 1 << 3
+IS_HUMID = 1 << 4
+IS_MOIST = 1 << 5
 
 # List of known sensor models from rtl_433, please feel free to patch
 # and add any that you have here.
 TH_SENSORS = ("THGR810", "THGR122N", "BHTR968")
+MOIST_SENSORS = ("Springfield Temperature & Moisture")
 WIND_SENSORS = ("WGR800")
 RAIN_SENSORS = ("PCR800")
 BARO_SENSORS = ("BHTR968")
@@ -50,12 +53,16 @@ class SensorPacket(object):
             model = packet.get("model", "")
             if model in TH_SENSORS:
                 self.stype |= IS_TEMP
+                self.stype |= IS_HUMID
             if model in BARO_SENSORS:
                 self.stype |= IS_BARO
             if model in RAIN_SENSORS:
                 self.stype |= IS_RAIN
             if model in WIND_SENSORS:
                 self.stype |= IS_WIND
+            if model in MOIST_SENSORS:
+                self.stype |= IS_TEMP
+                self.stype |= IS_MOIST
 
         # if this is an RFXCOM packet
         if isinstance(packet, ll.TempHumid):
@@ -83,10 +90,13 @@ class SensorPacket(object):
     def is_wind(self):
         return self.stype & IS_WIND
 
-    def __init__(self, stype=IS_NONE, bat=0, sig=0, sensor_id=0, **kwargs):
+    @property
+    def is_moist(self):
+        return self.stype & IS_MOIST
+
+    def __init__(self, stype=IS_NONE, bat=0, sensor_id=0, **kwargs):
         self.stype = stype
         self.bat = bat,
-        self.sig = sig
         self.sensor_id = sensor_id
         self.data = {}
         self.data.update(kwargs)
@@ -96,16 +106,22 @@ class SensorPacket(object):
         self.bat = data.get("battery", "NA")
 
         if "id" in data:
-            self.sensor_id = "%2.2x:%2.2x" % (data['id'], data['channel'])
+            self.sensor_id = "%2.2x:%2.2x" % (data['id'],
+                                              data.get('channel', 0))
         elif "sid" in data:
-            self.sensor_id = "%2.2x:%2.2x" % (data['sid'], data['channel'])
+            self.sensor_id = "%2.2x:%2.2x" % (data['sid'],
+                                              data.get('channel', 0))
         if self.stype & IS_TEMP:
             temp = temperature.Temperature(
                 "%sC" % data['temperature_C']).as_F()
             self.data['temp'] = round(temp.to_F(), 1)
+            self.data['units'] = 'F'
+        # note, we always assume HUMID sensors are temp sensors
+        if self.stype & IS_HUMID:
             self.data['dewpoint'] = round(temp.dewpoint(data['humidity']), 1)
             self.data['humid'] = round(data['humidity'], 1)
-            self.data['units'] = 'F'
+        if self.stype & IS_MOIST:
+            self.data['moisture'] = data['moisture']
         if self.stype & IS_BARO:
             self.data['pressure'] = data['pressure_hPa']
             self.data['units'] = 'mbar'
@@ -126,7 +142,6 @@ class SensorPacket(object):
     def from_packet(self, packet):
         self._set_type(packet)
         self.bat = getattr(packet, 'battery', -1)
-        self.sig = packet.rssi
         self.sensor_id = packet.id_string
         if self.stype & IS_TEMP:
             temp = temperature.Temperature("%sC" % packet.temp).as_F()
@@ -164,7 +179,7 @@ class MQTT(object):
         self.server = server
         self.port = port
         self.config = config
-        self.root = "arwn_rtl"
+        self.root = config["mqtt"].get("root", "arwn")
         self.status_topic = "%s/status" % self.root
 
         def on_connect(client, userdata, flags, rc):
@@ -266,6 +281,12 @@ class Dispatcher(object):
             # we send barometer sensors twice
             if packet.is_baro:
                 self.mqtt.send("barometer", packet.as_json(timestamp=now))
+
+            if packet.is_moist:
+                name = self.names.get(packet.sensor_id)
+                if name:
+                    topic = "moisture/%s" % name
+                    self.mqtt.send(topic, packet.as_json(timestamp=now))
 
             if packet.is_temp:
                 name = self.names.get(packet.sensor_id)
