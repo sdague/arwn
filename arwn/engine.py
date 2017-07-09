@@ -260,16 +260,25 @@ class RTL433Collector(object):
 
 class Dispatcher(object):
     def __init__(self, config):
-        ctype = config["collector"]["type"]
-        if ctype == "rtl433":
-            self.collector = RTL433Collector()
-        elif ctype == "rfxcom":
-            device = config["collector"]["device"]
-            self.collector = RFXCOMCollector(device)
+        self._get_collector(config)
         self.names = config["names"]
         server = config['mqtt']['server']
         self.mqtt = MQTT(server, config)
         self.config = config
+
+    def _get_collector(self, config):
+        col = config.get("collector")
+        if col:
+            ctype = col.get("type")
+            if ctype == "rtl433":
+                self.collector = RTL433Collector()
+            elif ctype == "rfxcom":
+                device = col["device"]
+                self.collector = RFXCOMCollector(device)
+        else:
+            # fall back for existing configs
+            device = config["device"]
+            self.collector = RFXCOMCollector(device)
 
     def loopforever(self):
 
