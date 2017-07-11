@@ -16,9 +16,9 @@ Ambient Radio Weather Network
 
 Collect 433Mhz weather sensor data and publish to mqtt.
 
-This software is designed to use an rfxcom usb receiver and relay the
-data found on it over an mqtt bus so that it can be consumed by other
-software, such as Home Assistant.
+This software is designed to use an rfxcom usb receiver or an rtl 433
+compatible receiver, and relay the data found on it over an mqtt bus
+so that it can be consumed by other software, such as Home Assistant.
 
 It also provides a mechanism for reporting the weather data to Weather
 Underground.
