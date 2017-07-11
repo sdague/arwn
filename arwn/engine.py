@@ -124,7 +124,6 @@ class SensorPacket(object):
             self.data['moisture'] = data['moisture']
         if self.stype & IS_BARO:
             self.data['pressure'] = data['pressure_hPa']
-            self.data['units'] = 'mbar'
         if self.stype & IS_RAIN:
             # rtl_433 already converts to non metric here
             self.data['total'] = data['rain_total']
@@ -151,7 +150,6 @@ class SensorPacket(object):
             self.data['units'] = 'F'
         if self.stype & IS_BARO:
             self.data['pressure'] = packet.baro
-            self.data['units'] = 'mbar'
         if self.stype & IS_RAIN:
             self.data['total'] = round(packet.raintotal / 25.4, 2)
             self.data['rate'] = round(packet.rainrate / 25.4, 2)
@@ -289,13 +287,17 @@ class Dispatcher(object):
 
             # we send barometer sensors twice
             if packet.is_baro:
-                self.mqtt.send("barometer", packet.as_json(timestamp=now))
+                self.mqtt.send("barometer", packet.as_json(
+                    units="mbar",
+                    timestamp=now))
 
             if packet.is_moist:
                 name = self.names.get(packet.sensor_id)
                 if name:
                     topic = "moisture/%s" % name
-                    self.mqtt.send(topic, packet.as_json(timestamp=now))
+                    self.mqtt.send(topic, packet.as_json(
+                        units=".",
+                        timestamp=now))
 
             if packet.is_temp:
                 name = self.names.get(packet.sensor_id)
