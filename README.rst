@@ -20,18 +20,26 @@ This software is designed to use an rfxcom usb receiver or an rtl 433
 compatible receiver, and relay the data found on it over an mqtt bus
 so that it can be consumed by other software, such as Home Assistant.
 
-It also provides a mechanism for reporting the weather data to Weather
-Underground.
+Installation Requirements
+=========================
 
+You will need a Linux system (raspberry pi is sufficient) and a 433
+MHz receiver. This supports either rfxcom receivers for rtl-sdr
+dongles.
 
-* Free software: Apache license
-..
-   * Documentation: https://arwn.readthedocs.org.
+- Install hardware + support code
 
-TODO
-----
+  - If using an rfxcom receiver, all supporting software is included.
 
-* User documentation
+  - If using an rtl-sdr dongle, you must also install the rtl433
+    project from source.
+
+- pip install arwn
+
+Configuration
+=============
+
+Copy the config.yml.sample file and modify it accordingly.
 
 Credits
 ---------

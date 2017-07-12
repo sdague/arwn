@@ -1,0 +1,22 @@
+# configuration for the collector
+collector:
+  # one of `rtl433` or `rfxcom`
+  type: rtl433
+  # usb device name for `rfxcom`
+  # device: /dev/ttyUSB0
+
+# weather underground reporting information
+wunderground:
+  station: $STATION_NAME
+  passwd: $PASSWD
+
+# named sensors, include the $house_id:$channel of sensors on your
+# network here and a friendly name. This allows the sensor names to be
+# persistant even after battery changes which will reset the $house_id
+# field.
+#
+# You must specify an "Outside" sensor for the weather underground
+# reporting to work correctly.
+names:
+  "ae:01": Outside
+  "e9:00": Living Room
