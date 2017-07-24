@@ -239,8 +239,13 @@ class RFXCOMCollector(object):
 
 
 class RTL433Collector(object):
-    def __init__(self):
-        self.rtl = subprocess.Popen(["rtl_433", "-F", "json"],
+    def __init__(self, devices=None):
+        cmd = ["rtl_433", "-F", "json"]
+        if devices is list:
+            for d in devices:
+                cmd.append("-R")
+                cmd.append(d)
+        self.rtl = subprocess.Popen(cmd,
                                     stdout=subprocess.PIPE,
                                     stdin=subprocess.PIPE)
 
@@ -269,7 +274,9 @@ class Dispatcher(object):
         if col:
             ctype = col.get("type")
             if ctype == "rtl433":
-                self.collector = RTL433Collector()
+                # devices to limit to
+                devices = col.get("devices", None)
+                self.collector = RTL433Collector(devices)
             elif ctype == "rfxcom":
                 device = col["device"]
                 self.collector = RFXCOMCollector(device)
