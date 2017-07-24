@@ -126,8 +126,8 @@ class SensorPacket(object):
             self.data['pressure'] = data['pressure_hPa']
         if self.stype & IS_RAIN:
             # rtl_433 already converts to non metric here
-            self.data['total'] = data['rain_total']
-            self.data['rate'] = data['rain_rate']
+            self.data['total'] = round(data['rain_total'], 2)
+            self.data['rate'] = round(data['rain_rate'], 2)
             self.data['units'] = 'in'
         if self.stype & IS_WIND:
             mps2mph = 2.23694
