@@ -93,7 +93,7 @@ class ComputeRainTotal(MQTTAction):
             delta_rain = 0
         since_midnight = {
             "timestamp": newr["timestamp"],
-            "since_midnight": delta_rain}
+            "since_midnight": round(delta_rain, 3)}
         client.send("rain/today", since_midnight)
 
 
