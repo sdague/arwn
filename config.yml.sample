@@ -1,0 +1,32 @@
+# configuration for the collector
+collector:
+  # one of `rtl433` or `rfxcom`
+  type: rtl433
+  # usb device name for `rfxcom`
+  # device: /dev/ttyUSB0
+
+# weather underground reporting information
+wunderground:
+  user: $EMAIL
+  station: $STATION_NAME
+  passwd: $PASSWD
+
+# What mqtt server to talk to
+mqtt:
+  server: $IP_ADDRESS
+  # by default this is going to publish to the arwn/ tree in mqtt. You
+  # can change this if you need to. This should only really be used
+  # for testing so that you can run 2 in parallel.
+  #
+  # root: $TOPIC
+
+# named sensors, include the $house_id:$channel of sensors on your
+# network here and a friendly name. This allows the sensor names to be
+# persistant even after battery changes which will reset the $house_id
+# field.
+#
+# You must specify an "Outside" sensor for the weather underground
+# reporting to work correctly.
+names:
+  "ae:01": Outside
+  "e9:00": Living Room
