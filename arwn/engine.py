@@ -299,6 +299,14 @@ class Dispatcher(object):
                     timestamp=now))
 
             if packet.is_moist:
+                # The reading of the moisture packets goes flakey a bit, apply
+                # some basic boundary conditions to it.
+                if packet.data['moisture'] > 10 or packet.data['temp'] > 150:
+                    logger.warn(
+                        "Packet moisture data makes no sense: %s => %s" %
+                        (packet, packet.as_json()))
+                    continue
+
                 name = self.names.get(packet.sensor_id)
                 if name:
                     topic = "moisture/%s" % name
