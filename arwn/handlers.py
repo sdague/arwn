@@ -69,9 +69,21 @@ class InitializeLastRainIfNotThere(MQTTAction):
 
 
 class ComputeRainTotal(MQTTAction):
-    regex = "^\w+/rain$"
+    regex = "^\w+/"
+    ts = None
+    topic = None
 
     def action(self, client, topic, payload):
+        # don't retrigger on our own topic that we know we are sending
+        # on.
+        if re.search("rain/today", topic) or re.search("totals/rain", topic):
+            return
+
+        # we do want to trigger on any timestamped message
+        ts = payload.get('timestamp')
+        if not ts:
+            return
+
         global LAST_RAIN_TOTAL
         global LAST_RAIN
         if not LAST_RAIN or not LAST_RAIN_TOTAL:
@@ -80,12 +92,12 @@ class ComputeRainTotal(MQTTAction):
         lastr = LAST_RAIN_TOTAL
         last_day = datetime.datetime.fromtimestamp(
             lastr['timestamp']).strftime('%j')
-        newr = payload
-        today = datetime.datetime.fromtimestamp(
-            newr['timestamp']).strftime('%j')
+        newr = LAST_RAIN
+        today = datetime.datetime.fromtimestamp(ts).strftime('%j')
         delta_days = (int(today) - int(last_day))
+        print "%s, %s => %s" % (last_day, today, delta_days)
 
-        if delta_days > 1 or delta_days < -300:
+        if delta_days >= 1 or delta_days < -300:
             client.send("totals/rain", LAST_RAIN, retain=True)
 
         delta_rain = newr["total"] - lastr["total"]
@@ -170,7 +182,9 @@ class WeatherUnderground(MQTTAction):
 
 
 def setup():
-    global HANDLERS
+    global LAST_RAIN_TOTAL, LAST_RAIN, HANDLERS
+    LAST_RAIN_TOTAL = None  # noqa
+    LAST_RAIN = None  # noqa
     HANDLERS = [
         RecordRainTotal(),
         UpdateTodayRain(),
