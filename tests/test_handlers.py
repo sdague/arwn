@@ -35,6 +35,7 @@ def mktime(year=1970, mon=1, day=1, hour=0, minute=0, sec=0):
     # boundaries.
     return (now - epoch).total_seconds() + time.timezone
 
+
 DAY1 = mktime(2017, 1, 1, 7)
 DAY1H1 = mktime(2017, 1, 1, 8)
 DAY2 = mktime(2017, 1, 2, 7)

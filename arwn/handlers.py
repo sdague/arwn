@@ -95,7 +95,6 @@ class ComputeRainTotal(MQTTAction):
         newr = LAST_RAIN
         today = datetime.datetime.fromtimestamp(ts).strftime('%j')
         delta_days = (int(today) - int(last_day))
-        print "%s, %s => %s" % (last_day, today, delta_days)
 
         if delta_days >= 1 or delta_days < -300:
             client.send("totals/rain", LAST_RAIN, retain=True)
@@ -168,7 +167,6 @@ class WeatherUnderground(MQTTAction):
         }
 
         params = urllib.urlencode(data)
-        # print data
         resp = request.urlopen("%s?%s" % (BASEURL, params))
         if resp.getcode() != 200:
             logger.error("Failed to upload to wunderground: %s - %s" %
