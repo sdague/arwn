@@ -121,7 +121,8 @@ class TestArwnHandlers(unittest.TestCase):
         client = FakeClient()
 
         rain_data = {"total": 10.0, "timestamp": DAY1}
-        rain_data2 = {"total": 11.0, "timestamp": DAY2}
+        rain_data2 = {"total": 10.7, "timestamp": DAY1H1}
+        rain_data3 = {"total": 11.0, "timestamp": DAY2}
 
         handlers.run(client, "arwn/totals/rain", rain_data)
         self.assertEqual(handlers.LAST_RAIN, None)
@@ -130,10 +131,17 @@ class TestArwnHandlers(unittest.TestCase):
         handlers.run(client, "arwn/rain", rain_data2)
         self.assertEqual(
             client.log[-1],
-            ["rain/today", dict(since_midnight=1.0, timestamp=DAY2)]
+            ["rain/today", dict(since_midnight=0.7, timestamp=DAY1H1)]
         )
-        self.assertEqual(handlers.LAST_RAIN, rain_data2)
-        self.assertEqual(handlers.LAST_RAIN_TOTAL, rain_data2)
+        handlers.run(client, "arwn/rain", rain_data3)
+        self.assertEqual(
+            client.log[-1],
+            ["rain/today", dict(since_midnight=0.3, timestamp=DAY2)]
+        )
+        self.assertEqual(handlers.LAST_RAIN, rain_data3)
+        totals = rain_data2.copy()
+        totals.update(timestamp=rain_data3['timestamp'])
+        self.assertEqual(handlers.LAST_RAIN_TOTAL, totals)
 
     def test_updates_just_after_midnight(self):
         client = FakeClient()
@@ -161,27 +169,29 @@ class TestArwnHandlers(unittest.TestCase):
             ['rain/today', dict(since_midnight=1.0, timestamp=DAY2_1159)])
 
         handlers.run(client, "arwn/rain", rain_data3)
-        self.assertEqual(len(client.log), 5, client.log)
-        self.assertEqual(
-            client.log[-1],
-            ["rain/today", dict(since_midnight=2.0, timestamp=DAY3_1200)]
-        )
-        self.assertEqual(handlers.LAST_RAIN, rain_data3)
-        self.assertEqual(handlers.LAST_RAIN_TOTAL, rain_data3)
-
-        handlers.run(client, "arwn/rain", rain_data4)
         self.assertEqual(len(client.log), 6, client.log)
         self.assertEqual(
             client.log[-1],
-            ["rain/today", dict(since_midnight=0.0, timestamp=DAY3_1201)]
+            ["rain/today", dict(since_midnight=1.0, timestamp=DAY3_1200)]
+        )
+        self.assertEqual(handlers.LAST_RAIN, rain_data3)
+        totals = rain_data2.copy()
+        totals.update(timestamp=rain_data3['timestamp'])
+        self.assertEqual(handlers.LAST_RAIN_TOTAL, totals)
+
+        handlers.run(client, "arwn/rain", rain_data4)
+        self.assertEqual(len(client.log), 7, client.log)
+        self.assertEqual(
+            client.log[-1],
+            ["rain/today", dict(since_midnight=1.0, timestamp=DAY3_1201)]
         )
         self.assertEqual(handlers.LAST_RAIN, rain_data4)
-        self.assertEqual(handlers.LAST_RAIN_TOTAL, rain_data3)
+        self.assertEqual(handlers.LAST_RAIN_TOTAL, totals)
 
         handlers.run(client, "arwn/rain", rain_data5)
         self.assertEqual(
             client.log[-1],
-            ["rain/today", dict(since_midnight=0.004, timestamp=DAY3_1202)]
+            ["rain/today", dict(since_midnight=1.004, timestamp=DAY3_1202)]
         )
 
     def test_updates_over_new_years(self):
@@ -208,26 +218,23 @@ class TestArwnHandlers(unittest.TestCase):
             client.log[-1],
             ['rain/today', dict(since_midnight=1.0, timestamp=Y1D365_1)])
 
-        # BUG(sdague): the roll over behavior isn't quite ideal,
-        # because what you get is the first value on the new day is
-        # the culmination of all the rain thus far. Honestly it would
-        # be better to do the reset ahead of this, then account for
-        # this 1 inch in the new data for the next day.
         handlers.run(client, "arwn/rain", rain_data3)
         self.assertEqual(handlers.LAST_RAIN, rain_data3)
-        self.assertEqual(handlers.LAST_RAIN_TOTAL, rain_data3)
-        self.assertEqual(len(client.log), 5, client.log)
-        self.assertEqual(
-            client.log[-1],
-            ['rain/today', dict(since_midnight=2.0, timestamp=DAY1)])
-
-        handlers.run(client, "arwn/rain", rain_data4)
-        self.assertEqual(handlers.LAST_RAIN, rain_data4)
-        self.assertEqual(handlers.LAST_RAIN_TOTAL, rain_data3)
+        totals = rain_data2.copy()
+        totals.update(timestamp=rain_data3['timestamp'])
+        self.assertEqual(handlers.LAST_RAIN_TOTAL, totals)
         self.assertEqual(len(client.log), 6, client.log)
         self.assertEqual(
             client.log[-1],
-            ['rain/today', dict(since_midnight=1.0, timestamp=DAY1H1)])
+            ['rain/today', dict(since_midnight=1.0, timestamp=DAY1)])
+
+        handlers.run(client, "arwn/rain", rain_data4)
+        self.assertEqual(handlers.LAST_RAIN, rain_data4)
+        self.assertEqual(handlers.LAST_RAIN_TOTAL, totals)
+        self.assertEqual(len(client.log), 7, client.log)
+        self.assertEqual(
+            client.log[-1],
+            ['rain/today', dict(since_midnight=2.0, timestamp=DAY1H1)])
 
     # TODO(sdague): test case for what happens when the data on the
     # rain guage gets reset due to battery replacement. I have one of

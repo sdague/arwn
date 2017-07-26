@@ -25,7 +25,23 @@ logger = logging.getLogger(__name__)
 
 LAST_RAIN_TOTAL = None
 LAST_RAIN = None
+PREV_RAIN = None
 HANDLERS = []
+
+"""Handlers are a way to put statefullness and logic into the MQTT bus
+itself. ARWN monitors the root topic, and can react to messages to do
+more complex logic. We use this to do things like report to weather
+underground, or to do the rain totals calculations."""
+
+# How rain since midnight should work.
+#
+# 1. when a rain packet comes in, if it still in the same day,
+# LAST_RAIN == current total.
+#
+# 2. if its past midnight, update the LAST_RAIN_TOTAL to what
+# LAST_RAIN was.
+#
+# 3. Set LAST_RAIN to new rain.
 
 
 class MQTTAction(object):
@@ -55,7 +71,8 @@ class UpdateTodayRain(MQTTAction):
     regex = "^\w+/rain$"
 
     def action(self, client, topic, payload):
-        global LAST_RAIN
+        global LAST_RAIN, PREV_RAIN
+        PREV_RAIN = LAST_RAIN or payload
         LAST_RAIN = payload
 
 
@@ -73,37 +90,79 @@ class ComputeRainTotal(MQTTAction):
     ts = None
     topic = None
 
-    def action(self, client, topic, payload):
+    def is_rollover(self, ts):
+        # the last day we're keeping state for
+        global LAST_RAIN_TOTAL
+        return not self.is_sameday(ts, LAST_RAIN_TOTAL['timestamp'])
+
+    def is_sameday(self, ts1, ts2):
+        d1 = datetime.datetime.fromtimestamp(ts1).strftime('%j')
+        d2 = datetime.datetime.fromtimestamp(ts2).strftime('%j')
+        delta_days = (int(d1) - int(d2))
+        return delta_days == 0
+
+    def should_proceed(self, topic, payload):
         # don't retrigger on our own topic that we know we are sending
         # on.
         if re.search("rain/today", topic) or re.search("totals/rain", topic):
-            return
+            return False
 
         # we do want to trigger on any timestamped message
         ts = payload.get('timestamp')
         if not ts:
-            return
+            return False
 
         global LAST_RAIN_TOTAL
-        global LAST_RAIN
-        if not LAST_RAIN or not LAST_RAIN_TOTAL:
+        global PREV_RAIN
+        if not PREV_RAIN or not LAST_RAIN_TOTAL:
+            return False
+        return True
+
+    def yesterdays_totals(self):
+        global PREV_RAIN, LAST_RAIN, LAST_RAIN_TOTAL
+        if self.is_sameday(LAST_RAIN_TOTAL['timestamp'],
+                           LAST_RAIN['timestamp']):
+            total = LAST_RAIN
+        else:
+            total = PREV_RAIN
+        return total.copy()
+
+    def action(self, client, topic, payload):
+
+        if not self.should_proceed(topic, payload):
             return
 
-        lastr = LAST_RAIN_TOTAL
-        last_day = datetime.datetime.fromtimestamp(
-            lastr['timestamp']).strftime('%j')
-        newr = LAST_RAIN
-        today = datetime.datetime.fromtimestamp(ts).strftime('%j')
-        delta_days = (int(today) - int(last_day))
+        global PREV_RAIN, LAST_RAIN, LAST_RAIN_TOTAL
 
-        if delta_days >= 1 or delta_days < -300:
-            client.send("totals/rain", LAST_RAIN, retain=True)
+        ts = payload.get('timestamp')
+        if self.is_rollover(ts):
+            print("Rollover event!")
+            # we need to emit yesterday's updated totals
+            totals = self.yesterdays_totals()
+            totals['timestamp'] = ts
+            client.send("totals/rain", totals, retain=True)
 
-        delta_rain = newr["total"] - lastr["total"]
+            delta_rain = LAST_RAIN["total"] - totals["total"]
+            if delta_rain < 0:
+                delta_rain = 0
+
+            since_midnight = {
+                "timestamp": ts,
+                "since_midnight": round(delta_rain, 3)}
+            client.send("rain/today", since_midnight)
+
+
+class TodaysRain(MQTTAction):
+    regex = "^\w+/rain$"
+
+    def action(self, client, topic, payload):
+        global LAST_RAIN_TOTAL
+
+        delta_rain = payload["total"] - LAST_RAIN_TOTAL["total"]
         if delta_rain < 0:
             delta_rain = 0
         since_midnight = {
-            "timestamp": newr["timestamp"],
+            "timestamp": payload["timestamp"],
             "since_midnight": round(delta_rain, 3)}
         client.send("rain/today", since_midnight)
 
@@ -180,14 +239,16 @@ class WeatherUnderground(MQTTAction):
 
 
 def setup():
-    global LAST_RAIN_TOTAL, LAST_RAIN, HANDLERS
+    global LAST_RAIN_TOTAL, LAST_RAIN, PREV_RAIN, HANDLERS
     LAST_RAIN_TOTAL = None  # noqa
     LAST_RAIN = None  # noqa
+    PREV_RAIN = None  # noqa
     HANDLERS = [
         RecordRainTotal(),
         UpdateTodayRain(),
         InitializeLastRainIfNotThere(),
         ComputeRainTotal(),
+        TodaysRain(),
         WeatherUnderground()
     ]
 
