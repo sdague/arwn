@@ -44,6 +44,9 @@ DAY3_1200 = mktime(2017, 1, 3, 0, 0, 0)
 DAY3_1201 = mktime(2017, 1, 3, 0, 0, 1)
 DAY3_1202 = mktime(2017, 1, 3, 0, 0, 2)
 
+Y1D365 = mktime(2016, 12, 31, 12)
+Y1D365_1 = mktime(2016, 12, 31, 20)
+
 
 class TestArwnHandlers(unittest.TestCase):
 
@@ -180,6 +183,55 @@ class TestArwnHandlers(unittest.TestCase):
             client.log[-1],
             ["rain/today", dict(since_midnight=0.004, timestamp=DAY3_1202)]
         )
+
+    def test_updates_over_new_years(self):
+        client = FakeClient()
+
+        rain_data = {"total": 10.0, "timestamp": Y1D365}
+        rain_data2 = {"total": 11.0, "timestamp": Y1D365_1}
+        rain_data3 = {"total": 12.0, "timestamp": DAY1}
+        rain_data4 = {"total": 13.0, "timestamp": DAY1H1}
+
+        handlers.run(client, "arwn/rain", rain_data)
+        self.assertEqual(handlers.LAST_RAIN, rain_data)
+        self.assertEqual(handlers.LAST_RAIN_TOTAL, rain_data)
+        self.assertEqual(len(client.log), 2, client.log)
+        self.assertEqual(
+            client.log[-1],
+            ['rain/today', dict(since_midnight=0.0, timestamp=Y1D365)])
+
+        handlers.run(client, "arwn/rain", rain_data2)
+        self.assertEqual(handlers.LAST_RAIN, rain_data2)
+        self.assertEqual(handlers.LAST_RAIN_TOTAL, rain_data)
+        self.assertEqual(len(client.log), 3, client.log)
+        self.assertEqual(
+            client.log[-1],
+            ['rain/today', dict(since_midnight=1.0, timestamp=Y1D365_1)])
+
+        # BUG(sdague): the roll over behavior isn't quite ideal,
+        # because what you get is the first value on the new day is
+        # the culmination of all the rain thus far. Honestly it would
+        # be better to do the reset ahead of this, then account for
+        # this 1 inch in the new data for the next day.
+        handlers.run(client, "arwn/rain", rain_data3)
+        self.assertEqual(handlers.LAST_RAIN, rain_data3)
+        self.assertEqual(handlers.LAST_RAIN_TOTAL, rain_data3)
+        self.assertEqual(len(client.log), 5, client.log)
+        self.assertEqual(
+            client.log[-1],
+            ['rain/today', dict(since_midnight=2.0, timestamp=DAY1)])
+
+        handlers.run(client, "arwn/rain", rain_data4)
+        self.assertEqual(handlers.LAST_RAIN, rain_data4)
+        self.assertEqual(handlers.LAST_RAIN_TOTAL, rain_data3)
+        self.assertEqual(len(client.log), 6, client.log)
+        self.assertEqual(
+            client.log[-1],
+            ['rain/today', dict(since_midnight=1.0, timestamp=DAY1H1)])
+
+    # TODO(sdague): test case for what happens when the data on the
+    # rain guage gets reset due to battery replacement. I have one of
+    # these events coming up this year.
 
 
 if __name__ == '__main__':
