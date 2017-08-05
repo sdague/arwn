@@ -290,10 +290,11 @@ class RTL433Collector(object):
         data["channel"] = data.get("channel", 0)
         try:
             logger.debug(fmtstr, data)
-        except Exception as e:
+        except Exception:
             logger.error(data)
             logger.error(subset)
             pass
+
 
 class Dispatcher(object):
     def __init__(self, config):
