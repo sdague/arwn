@@ -241,10 +241,13 @@ class RFXCOMCollector(object):
 class RTL433Collector(object):
     def __init__(self, devices=None):
         cmd = ["rtl_433", "-F", "json"]
-        if devices is list:
+        logger.error(devices)
+        logger.error(type(devices))
+        if type(devices) is list:
             for d in devices:
                 cmd.append("-R")
-                cmd.append(d)
+                cmd.append("%s" % d)
+        logger.info("starting cmd: %s" % cmd)
         self.rtl = subprocess.Popen(cmd,
                                     stdout=subprocess.PIPE,
                                     stdin=subprocess.PIPE)
@@ -268,12 +271,13 @@ class RTL433Collector(object):
             ("temperature_C", "%(temperature_C)sC"),
             ("temperature", "%(temperature)sF"),
             ("humidity", "%(humidity)s%%"),
+            ("moisture", "Moist:%(moisture)s"),
             ("pressure_hPa", "%(pressure_hPa)shPa"),
             ("direction", u"%(direction)s" + u"\u00b0"),
-            ("gust", "Gust: %(gust)s"),
-            ("average", "Speed: %(average)s"),
-            ("rain_total", "Total: %(rain_total)s"),
-            ("rain_rate", "Rate: %(rain_rate)s"),
+            ("gust", "Gust:%(gust)s"),
+            ("average", "Speed:%(average)s"),
+            ("rain_total", "Total:%(rain_total)s"),
+            ("rain_rate", "Rate:%(rain_rate)s"),
             ("battery", "bat:%(battery)s")
         ]
         subset = []
