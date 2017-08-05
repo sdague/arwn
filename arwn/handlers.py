@@ -53,7 +53,6 @@ class MQTTAction(object):
     def run(self, client, topic, payload):
         if self.regex and re.search(self.regex, topic):
             try:
-                logger.debug("Running handler %s" % self)
                 self.action(client, topic, payload)
             except Exception as e:
                 logger.error(e)
@@ -227,6 +226,11 @@ class WeatherUnderground(MQTTAction):
 
         params = urllib.urlencode(data)
         resp = request.urlopen("%s?%s" % (BASEURL, params))
+        logger.info("Reported to WUnderground: %(tempf)sF / %(dewptf)sF - "
+                    "%(baromin)sinhg - %(dailyrainin)sin - "
+                    "%(windgustmph)smph / %(windspeedmph)smph %(winddir)s",
+                    data)
+
         if resp.getcode() != 200:
             logger.error("Failed to upload to wunderground: %s - %s" %
                          (params, resp.info()))

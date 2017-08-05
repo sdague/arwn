@@ -24,7 +24,7 @@ from arwn import handlers
 from arwn.vendor.RFXtrx import lowlevel as ll
 from arwn.vendor.RFXtrx.pyserial import PySerialTransport
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 IS_NONE = 0
 IS_TEMP = 1 << 0
@@ -255,11 +255,41 @@ class RTL433Collector(object):
     def next(self):
         line = self.rtl.stdout.readline()
         data = json.loads(line)
-        logger.debug(data)
+        self.log_data(data)
         packet = SensorPacket()
         packet.from_json(data)
         return packet
 
+    def log_data(self, data):
+        fields = [
+            ("model", "(%(model)s)"),
+            ("id", "%(id)d:%(channel)d"),
+            ("sid", "%(sid)d:%(channel)d"),
+            ("temperature_C", "%(temperature_C)sC"),
+            ("temperature", "%(temperature)sF"),
+            ("humidity", "%(humidity)s%%"),
+            ("pressure_hPa", "%(pressure_hPa)shPa"),
+            ("direction", u"%(direction)s" + u"\u00b0"),
+            ("gust", "Gust: %(gust)s"),
+            ("average", "Speed: %(average)s"),
+            ("rain_total", "Total: %(rain_total)s"),
+            ("rain_rate", "Rate: %(rain_rate)s"),
+            ("battery", "bat:%(battery)s")
+        ]
+        subset = []
+        for item in fields:
+            name = item[0]
+            fmt = item[1]
+            if name in data:
+                subset.append(fmt)
+        fmtstr = " ".join(subset)
+        data["channel"] = data.get("channel", 0)
+        try:
+            logger.debug(fmtstr, data)
+        except Exception as e:
+            logger.error(data)
+            logger.error(subset)
+            pass
 
 class Dispatcher(object):
     def __init__(self, config):
