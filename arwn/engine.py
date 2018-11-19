@@ -353,7 +353,9 @@ class Dispatcher(object):
                         timestamp=now))
 
             if packet.is_temp:
-                if packet.data['temp'] > MAX_TEMP or packet.data['temp'] < MIN_TEMP:
+                if (packet.data['temp'] > MAX_TEMP or
+                    packet.data['temp'] < MIN_TEMP):
+
                     logger.warn(
                         "Packet temp data makes no sense: %s => %s" %
                         (packet, packet.as_json()))

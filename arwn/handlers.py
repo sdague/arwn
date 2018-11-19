@@ -59,7 +59,7 @@ class MQTTAction(object):
 
 
 class RecordRainTotal(MQTTAction):
-    regex = "^\w+/totals/rain$"
+    regex = r"^\w+/totals/rain$"
 
     def action(self, client, topic, payload):
         global LAST_RAIN_TOTAL
@@ -67,7 +67,7 @@ class RecordRainTotal(MQTTAction):
 
 
 class UpdateTodayRain(MQTTAction):
-    regex = "^\w+/rain$"
+    regex = r"^\w+/rain$"
 
     def action(self, client, topic, payload):
         global LAST_RAIN, PREV_RAIN
@@ -76,7 +76,7 @@ class UpdateTodayRain(MQTTAction):
 
 
 class InitializeLastRainIfNotThere(MQTTAction):
-    regex = "^\w+/rain$"
+    regex = r"^\w+/rain$"
 
     def action(self, client, topic, payload):
         global LAST_RAIN_TOTAL
@@ -85,7 +85,7 @@ class InitializeLastRainIfNotThere(MQTTAction):
 
 
 class ComputeRainTotal(MQTTAction):
-    regex = "^\w+/"
+    regex = r"^\w+/"
     ts = None
     topic = None
 
@@ -152,7 +152,7 @@ class ComputeRainTotal(MQTTAction):
 
 
 class TodaysRain(MQTTAction):
-    regex = "^\w+/rain$"
+    regex = r"^\w+/rain$"
 
     def action(self, client, topic, payload):
         global LAST_RAIN_TOTAL
@@ -167,7 +167,7 @@ class TodaysRain(MQTTAction):
 
 
 class WeatherUnderground(MQTTAction):
-    regex = "^\w+/(wind|temperature/Outside|rain/today|barometer)$"
+    regex = r"^\w+/(wind|temperature/Outside|rain/today|barometer)$"
     temp = None
     dewpoint = None
     rain = None
@@ -183,7 +183,7 @@ class WeatherUnderground(MQTTAction):
                 self.pressure is not None and
                 self.winddir is not None and
                 self.windspeed is not None and
-                self.windgust is not None)
+                self.windgust is not None)  # noqa
 
     def action(self, client, topic, payload):
         if 'wind' in topic:

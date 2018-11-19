@@ -15,7 +15,7 @@
 import math
 import re
 
-regex = '(-?\d+(\.\d+)?)(F|C|K)'
+regex = r'(-?\d+(\.\d+)?)(F|C|K)'
 
 # The scale factor between C and F
 CScale = 1.8
