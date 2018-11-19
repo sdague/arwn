@@ -42,6 +42,9 @@ WIND_SENSORS = ("WGR800")
 RAIN_SENSORS = ("PCR800")
 BARO_SENSORS = ("BHTR968")
 
+MAX_TEMP = 150
+MIN_TEMP = -40
+
 
 class SensorPacket(object):
     """Convert RFXtrx packet to native packet for ARWN"""
@@ -349,6 +352,12 @@ class Dispatcher(object):
                         timestamp=now))
 
             if packet.is_temp:
+                if packet.data['temp'] > MAX_TEMP or packet.data['temp'] < MIN_TEMP:
+                    logger.warn(
+                        "Packet temp data makes no sense: %s => %s" %
+                        (packet, packet.as_json()))
+                    continue
+
                 name = self.names.get(packet.sensor_id)
                 if name:
                     topic = "temperature/%s" % name
