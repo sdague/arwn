@@ -257,7 +257,8 @@ class RTL433Collector(object):
         logger.info("starting cmd: %s" % cmd)
         self.rtl = subprocess.Popen(cmd,
                                     stdout=subprocess.PIPE,
-                                    stdin=subprocess.PIPE)
+                                    stdin=subprocess.PIPE,
+                                    universal_newlines=True)
 
     def __iter__(self):
         return self
