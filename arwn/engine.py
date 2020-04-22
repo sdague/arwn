@@ -274,8 +274,8 @@ class RTL433Collector(object):
     def log_data(self, data):
         fields = [
             ("model", "(%(model)s)"),
-            ("id", "%(id)d:%(channel)d"),
-            ("sid", "%(sid)d:%(channel)d"),
+            ("id", "%(id)s:%(channel)s"),
+            ("sid", "%(sid)s:%(channel)s"),
             ("temperature_C", "%(temperature_C)sC"),
             ("temperature", "%(temperature)sF"),
             ("humidity", "%(humidity)s%%"),
