@@ -19,6 +19,10 @@ mqtt:
   # for testing so that you can run 2 in parallel.
   #
   # root: $TOPIC
+  # optional
+  username: 
+  # optional
+  password: 
 
 # named sensors, include the $house_id:$channel of sensors on your
 # network here and a friendly name. This allows the sensor names to be
