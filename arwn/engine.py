@@ -36,11 +36,11 @@ IS_MOIST = 1 << 5
 
 # List of known sensor models from rtl_433, please feel free to patch
 # and add any that you have here.
-TH_SENSORS = ("THGR810", "THGR122N", "BHTR968")
+TH_SENSORS = ("THGR810", "THGR122N", "BHTR968", "Acurite-5n1")
 MOIST_SENSORS = ("Springfield Temperature & Moisture")
-WIND_SENSORS = ("WGR800")
-RAIN_SENSORS = ("PCR800")
-BARO_SENSORS = ("BHTR968")
+WIND_SENSORS = ("WGR800", "Acurite-5n1")
+RAIN_SENSORS = ("PCR800", "Acurite-5n1")
+BARO_SENSORS = ("BHTR968", "Acurite-5n1")
 
 MAX_TEMP = 150
 MIN_TEMP = -40
@@ -203,6 +203,7 @@ class MQTT(object):
                         json.dumps(status_dead), qos=2, retain=True)
         client.on_connect = on_connect
         client.on_message = on_message
+        
         client.connect(self.server, self.port)
         client.loop_start()
         self.client = client
