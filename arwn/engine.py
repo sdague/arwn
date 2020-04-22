@@ -105,6 +105,7 @@ class SensorPacket(object):
         self.data.update(kwargs)
 
     def from_json(self, data):
+        logger.debug(data)
         self._set_type(data)
         self.bat = data.get("battery", "NA")
 
