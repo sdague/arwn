@@ -109,11 +109,9 @@ class SensorPacket(object):
         self.bat = data.get("battery", "NA")
 
         if "id" in data:
-            self.sensor_id = "%2.2x:%2.2x" % (data['id'],
-                                              data.get('channel', 0))
+            self.sensor_id = "%s:%s" % (data['id'], data.get('channel', 0))
         elif "sid" in data:
-            self.sensor_id = "%2.2x:%2.2x" % (data['sid'],
-                                              data.get('channel', 0))
+            self.sensor_id = "%s:%s" % (data['sid'], data.get('channel', 0))
         if self.stype & IS_TEMP:
             temp = temperature.Temperature(
                 "%sC" % data['temperature_C']).as_F()
