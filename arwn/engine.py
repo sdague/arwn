@@ -114,10 +114,16 @@ class SensorPacket(object):
         elif "sid" in data:
             self.sensor_id = "%s:%s" % (data['sid'], data.get('channel', 0))
         if self.stype & IS_TEMP:
-            temp = temperature.Temperature(
-                "%sC" % data['temperature_C']).as_F()
-            self.data['temp'] = round(temp.to_F(), 1)
-            self.data['units'] = 'F'
+            if 'temperature_C' in data:
+                temp = temperature.Temperature(
+                    "%sC" % data['temperature_C']).as_F()
+                self.data['temp'] = round(temp.to_F(), 1)
+                self.data['units'] = 'F'
+            elif 'temperature_F' in data:
+                temp = temperature.Temperature(
+                    "%sF" % data['temperature_F']).as_F()
+                self.data['temp'] = round(temp.to_F(), 1)
+                self.data['units'] = 'F'
         # note, we always assume HUMID sensors are temp sensors
         if self.stype & IS_HUMID:
             self.data['dewpoint'] = round(temp.dewpoint(data['humidity']), 1)
