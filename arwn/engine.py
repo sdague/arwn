@@ -265,6 +265,7 @@ class RTL433Collector(object):
     def __next__(self):
         line = self.rtl.stdout.readline()
         data = json.loads(line)
+        logger.debug(data)
         self.log_data(data)
         packet = SensorPacket()
         packet.from_json(data)
