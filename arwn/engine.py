@@ -21,6 +21,7 @@ import paho.mqtt.client as paho
 
 from arwn import temperature
 from arwn import handlers
+from device.acurite5n1 import Acurite5n1
 from arwn.vendor.RFXtrx import lowlevel as ll
 from arwn.vendor.RFXtrx.pyserial import PySerialTransport
 
@@ -114,16 +115,10 @@ class SensorPacket(object):
         elif "sid" in data:
             self.sensor_id = "%s:%s" % (data['sid'], data.get('channel', 0))
         if self.stype & IS_TEMP:
-            if 'temperature_C' in data:
-                temp = temperature.Temperature(
-                    "%sC" % data['temperature_C']).as_F()
-                self.data['temp'] = round(temp.to_F(), 1)
-                self.data['units'] = 'F'
-            elif 'temperature_F' in data:
-                temp = temperature.Temperature(
-                    "%sF" % data['temperature_F']).as_F()
-                self.data['temp'] = round(temp.to_F(), 1)
-                self.data['units'] = 'F'
+            temp = temperature.Temperature(
+                "%sC" % data['temperature_C']).as_F()
+            self.data['temp'] = round(temp.to_F(), 1)
+            self.data['units'] = 'F'
         # note, we always assume HUMID sensors are temp sensors
         if self.stype & IS_HUMID:
             self.data['dewpoint'] = round(temp.dewpoint(data['humidity']), 1)
@@ -273,9 +268,12 @@ class RTL433Collector(object):
         line = self.rtl.stdout.readline()
         data = json.loads(line)
         self.log_data(data)
-        packet = SensorPacket()
-        packet.from_json(data)
-        return packet
+        if data["model"] == "Acurite-5n1":
+            return Acurite5n1(data)
+        else:
+            packet = SensorPacket()
+            packet.from_json(data)
+            return packet
 
     def log_data(self, data):
         fields = [
