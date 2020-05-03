@@ -9,7 +9,7 @@ except:
 webbrowser.open("file://" + pathname2url(os.path.abspath(sys.argv[1])))
 endef
 export BROWSER_PYSCRIPT
-BROWSER := python3 -c "$$BROWSER_PYSCRIPT"
+BROWSER := python -c "$$BROWSER_PYSCRIPT"
 
 help:
 	@echo "clean - remove all build, test, coverage and Python artifacts"
@@ -49,7 +49,7 @@ lint:
 	flake8 arwn tests
 
 test:
-	python3 setup.py test
+	python setup.py test
 
 test-all:
 	tox
@@ -72,13 +72,13 @@ servedocs: docs
 	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
 
 release: clean
-	python3 setup.py sdist upload
-	python3 setup.py bdist_wheel upload
+	python setup.py sdist upload
+	python setup.py bdist_wheel upload
 
 dist: clean
-	python3 setup.py sdist
-	python3 setup.py bdist_wheel
+	python setup.py sdist
+	python setup.py bdist_wheel
 	ls -l dist
 
 install: clean
-	python3 setup.py install
+	python setup.py install
