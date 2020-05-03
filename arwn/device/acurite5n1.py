@@ -33,6 +33,10 @@ class Acurite5n1(object):
     def is_wind(self):
         return "average" in self.data
 
+    @property
+    def is_moist(self):
+        return False
+
     def as_json(self, **kwargs):
         data = dict(bat=self.bat, sensor_id=self.sensor_id)
         data.update(self.data)
