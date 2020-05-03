@@ -12,7 +12,7 @@ class Acurite5n1(object):
             self.data['units'] = 'F'
             self.data['dewpoint'] = round(temp.dewpoint(data['humidity']), 1)
             self.data['humid'] = round(data['humidity'], 1)
-        if "wind_avg_km_h" in data:
+        if "wind_dir_deg" in data:
             self.data['speed'] = round(float(data['wind_avg_km_h']) / 1.609344, 1)
             self.data['direction'] = data['wind_dir_deg']
             self.data['units'] = 'mph'
