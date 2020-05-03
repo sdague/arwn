@@ -31,7 +31,7 @@ class Acurite5n1(object):
 
     @property
     def is_wind(self):
-        return "average" in self.data
+        return "speed" in self.data
 
     @property
     def is_moist(self):
