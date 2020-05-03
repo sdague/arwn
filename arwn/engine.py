@@ -267,7 +267,6 @@ class RTL433Collector(object):
     def __next__(self):
         line = self.rtl.stdout.readline()
         data = json.loads(line)
-        logger.debug("data received\n%s", data)
         self.log_data(data)
         if data["model"] == "Acurite-5n1":
             return Acurite5n1(data)
@@ -376,11 +375,9 @@ class Dispatcher(object):
                     topic = "temperature/%s" % name
                 else:
                     topic = "unknown/%s" % packet.sensor_id
-                logger.debug("sending temperature MQTT packet\n%s", packet.as_json(timestamp=now))
                 self.mqtt.send(topic, packet.as_json(timestamp=now))
 
             if packet.is_wind:
-                logger.debug("sending wind MQTT packet\n%s", packet.as_json(timestamp=now))
                 self.mqtt.send("wind", packet.as_json(timestamp=now))
 
             if packet.is_rain:
