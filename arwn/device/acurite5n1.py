@@ -16,6 +16,9 @@ class Acurite5n1(object):
             self.data['speed'] = round(float(data['wind_avg_km_h']) / 1.609344, 1)
             self.data['direction'] = data['wind_dir_deg']
             self.data['units'] = 'mph'
+        if "rain_in" in data:
+            self.data['total'] = round(data['rain_in'], 2)
+            self.data['units'] = 'in'
     
     @property
     def is_temp(self):
@@ -27,7 +30,7 @@ class Acurite5n1(object):
 
     @property
     def is_rain(self):
-        return False
+        return "total" in self.data
 
     @property
     def is_wind(self):
