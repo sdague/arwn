@@ -21,7 +21,7 @@ import paho.mqtt.client as paho
 
 from arwn import temperature
 from arwn import handlers
-from device.acurite5n1 import Acurite5n1
+from arwn.device.acurite5n1 import Acurite5n1
 from arwn.vendor.RFXtrx import lowlevel as ll
 from arwn.vendor.RFXtrx.pyserial import PySerialTransport
 
