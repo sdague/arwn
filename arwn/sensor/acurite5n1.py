@@ -45,6 +45,7 @@ class Acurite5n1(Sensor):
 
     def as_wind(self):
         newSensor = Acurite5n1({})
+        newSensor.data = dict(bat=self.bat, sensor_id=self.sensor_id)
         newSensor.data['speed'] = self.data['speed']
         newSensor.data['direction'] = self.data['direction']
         newSensor.data['units'] = self.data['units']
@@ -52,6 +53,7 @@ class Acurite5n1(Sensor):
     
     def as_temp(self):
         newSensor = Acurite5n1({})
+        newSensor.data = dict(bat=self.bat, sensor_id=self.sensor_id)
         newSensor.data['temp'] = self.data['temp']
         newSensor.data['units'] = self.data['units']
         newSensor.data['dewpoint'] = self.data['dewpoint']
@@ -63,6 +65,7 @@ class Acurite5n1(Sensor):
 
     def as_rain(self):
         newSensor = Acurite5n1({})
+        newSensor.data = dict(bat=self.bat, sensor_id=self.sensor_id)
         newSensor.data['total'] = self.data['total']
         newSensor.data['units'] = self.data['units']
         return newSensor
