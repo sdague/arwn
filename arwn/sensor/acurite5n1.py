@@ -12,16 +12,16 @@ class Acurite5n1(Sensor):
             temp = temperature.Temperature(
                     "%sF" % data['temperature_F']).as_F()
             self.data['temp'] = round(temp.to_F(), 1)
-            self.data['units'] = 'F'
+            self.data['temp_units'] = 'F'
             self.data['dewpoint'] = round(temp.dewpoint(data['humidity']), 1)
             self.data['humid'] = round(data['humidity'], 1)
         if "wind_dir_deg" in data:
             self.data['speed'] = round(float(data['wind_avg_km_h']) / 1.609344, 1)
             self.data['direction'] = data['wind_dir_deg']
-            self.data['units'] = 'mph'
+            self.data['wind_units'] = 'mph'
         if "rain_in" in data:
             self.data['total'] = round(data['rain_in'], 2)
-            self.data['units'] = 'in'
+            self.data['rain_units'] = 'in'
     
     @property
     def is_temp(self):
@@ -49,7 +49,7 @@ class Acurite5n1(Sensor):
         newSensor.sensor_id = self.sensor_id
         newSensor.data['speed'] = self.data['speed']
         newSensor.data['direction'] = self.data['direction']
-        newSensor.data['units'] = self.data['units']
+        newSensor.data['units'] = self.data['wind_units']
         return newSensor
     
     def as_temp(self):
@@ -57,7 +57,7 @@ class Acurite5n1(Sensor):
         newSensor.bat = self.bat
         newSensor.sensor_id = self.sensor_id
         newSensor.data['temp'] = self.data['temp']
-        newSensor.data['units'] = self.data['units']
+        newSensor.data['units'] = self.data['temp_units']
         newSensor.data['dewpoint'] = self.data['dewpoint']
         newSensor.data['humid'] = self.data['humid']
         return newSensor
@@ -70,7 +70,7 @@ class Acurite5n1(Sensor):
         newSensor.bat = self.bat
         newSensor.sensor_id = self.sensor_id
         newSensor.data['total'] = self.data['total']
-        newSensor.data['units'] = self.data['units']
+        newSensor.data['units'] = self.data['rain_units']
         return newSensor
 
     def as_moist(self):
