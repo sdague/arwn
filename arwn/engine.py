@@ -21,7 +21,8 @@ import paho.mqtt.client as paho
 
 from arwn import temperature
 from arwn import handlers
-from arwn.device.acurite5n1 import Acurite5n1
+from arwn.sensor.acurite5n1 import Acurite5n1
+from arwn.sensor.sensor import Sensor
 from arwn.vendor.RFXtrx import lowlevel as ll
 from arwn.vendor.RFXtrx.pyserial import PySerialTransport
 
@@ -374,10 +375,19 @@ class Dispatcher(object):
                     topic = "temperature/%s" % name
                 else:
                     topic = "unknown/%s" % packet.sensor_id
-                self.mqtt.send(topic, packet.as_json(timestamp=now))
+                if isinstance(packet, Sensor):
+                    self.mqtt.send(topic, packet.as_temp().as_json(timestamp=now))
+                else:
+                    self.mqtt.send(topic, packet.as_json(timestamp=now))
 
             if packet.is_wind:
-                self.mqtt.send("wind", packet.as_json(timestamp=now))
+                if isinstance(packet, Sensor):
+                    self.mqtt.send("wind", packet.as_wind().as_json(timestamp=now))
+                else:
+                    self.mqtt.send("wind", packet.as_json(timestamp=now))
 
             if packet.is_rain:
-                self.mqtt.send("rain", packet.as_json(timestamp=now))
+                if isinstance(packet, Sensor):
+                    self.mqtt.send("rain", packet.as_rain().as_json(timestamp=now))
+                else:
+                    self.mqtt.send("rain", packet.as_json(timestamp=now))
