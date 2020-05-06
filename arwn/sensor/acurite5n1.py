@@ -1,10 +1,13 @@
 from arwn import temperature
+from arwn.sensor.sensor import Sensor
 
-class Acurite5n1(object):
+class Acurite5n1(Sensor):
     def __init__(self, data):
         self.data = {}
-        self.sensor_id = "%s:%s" % (data['id'], data.get('channel', 0))
-        self.bat = data['battery_ok']
+        if "id" in data:
+            self.sensor_id = "%s:%s" % (data['id'], data.get('channel', 0))
+        if "battery_ok" in data:
+            self.bat = data['battery_ok']
         if "temperature_F" in data:
             temp = temperature.Temperature(
                     "%sF" % data['temperature_F']).as_F()
@@ -39,6 +42,33 @@ class Acurite5n1(object):
     @property
     def is_moist(self):
         return False
+
+    def as_wind(self):
+        newSensor = Acurite5n1({})
+        newSensor.data['speed'] = self.data['speed']
+        newSensor.data['direction'] = self.data['direction']
+        newSensor.data['units'] = self.data['units']
+        return newSensor
+    
+    def as_temp(self):
+        newSensor = Acurite5n1({})
+        newSensor.data['temp'] = self.data['temp']
+        newSensor.data['units'] = self.data['units']
+        newSensor.data['dewpoint'] = self.data['dewpoint']
+        newSensor.data['humid'] = self.data['humid']
+        return newSensor
+
+    def as_baro(self):
+        return self
+
+    def as_rain(self):
+        newSensor = Acurite5n1({})
+        newSensor.data['total'] = self.data['total']
+        newSensor.data['units'] = self.data['units']
+        return newSensor
+
+    def as_moist(self):
+        return self
 
     def as_json(self, **kwargs):
         data = dict(bat=self.bat, sensor_id=self.sensor_id)
