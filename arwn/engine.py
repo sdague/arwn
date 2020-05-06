@@ -382,8 +382,9 @@ class Dispatcher(object):
                     self.mqtt.send(topic, packet.as_json(timestamp=now))
 
             if packet.is_wind:
-                if isinstance(packet, Sensor):
+                if isinstance(packet, Sensor):                    
                     self.mqtt.send("wind", packet.as_wind().as_json(timestamp=now))
+                    logger.debug('sent wind to mqtt, data: %s', packet.as_wind().as_json(timestamp=now))
                 else:
                     self.mqtt.send("wind", packet.as_json(timestamp=now))
 
