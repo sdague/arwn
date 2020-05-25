@@ -197,7 +197,7 @@ class MQTT(object):
             return True
 
         if config["mqtt"]["username"] and config["mqtt"]["password"]:
-            client.username_pw_set(config["mqtt"]["username"], 
+            client.username_pw_set(config["mqtt"]["username"],
                                    config["mqtt"]["password"])
 
         status_dead = {'status': 'dead'}
