@@ -18,11 +18,9 @@ mqtt:
   # can change this if you need to. This should only really be used
   # for testing so that you can run 2 in parallel.
   #
-  # root: $TOPIC
-  # optional
-  username: 
-  # optional
-  password: 
+  # root: $TOPIC  
+  # username: $USER
+  # password: $PASS
 
 # named sensors, include the $house_id:$channel of sensors on your
 # network here and a friendly name. This allows the sensor names to be
