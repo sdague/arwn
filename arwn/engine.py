@@ -196,7 +196,7 @@ class MQTT(object):
             handlers.run(self, msg.topic, payload)
             return True
 
-        if config["mqtt"]["username"] and config["mqtt"]["password"]:
+        if config["mqtt"].get("username") and config["mqtt"].get("password"):
             client.username_pw_set(config["mqtt"]["username"],
                                    config["mqtt"]["password"])
 
