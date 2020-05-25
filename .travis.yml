@@ -1,5 +1,4 @@
-sudo: false
-matrix:
+jobs:
   fast_finish: true
   include:
   - python: '3.6'
@@ -18,7 +17,7 @@ language: python
 script: tox
 deploy:
   provider: pypi
-  user: __token__
+  username: __token__
   on:
     tags: true
   password:
