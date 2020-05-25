@@ -228,7 +228,7 @@ class RFXCOMCollector(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         try:
             event = self.transport.receive_blocking()
             self.unparsable = 0
@@ -262,7 +262,7 @@ class RTL433Collector(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         line = self.rtl.stdout.readline()
         data = json.loads(line)
         self.log_data(data)
