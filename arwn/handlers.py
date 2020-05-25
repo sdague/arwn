@@ -16,8 +16,8 @@ import datetime
 import logging
 import re
 
-import six.moves.urllib.parse as urllib
-import six.moves.urllib.request as request
+import urllib.parse as urllib
+import urllib.request as request
 
 import arwn
 
