@@ -2,6 +2,9 @@
 History
 =======
 
+Unreleased
+----------
+
 2.0.0 (2020-05-25)
 ------------------
 * Drop python2 support
