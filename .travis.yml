@@ -17,3 +17,7 @@ cache: pip
 install: pip install -U tox
 language: python
 script: tox
+
+deploy:
+  provider: pypi
+  user: "__token__"
