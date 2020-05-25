@@ -196,6 +196,10 @@ class MQTT(object):
             handlers.run(self, msg.topic, payload)
             return True
 
+        if config["mqtt"].get("username") and config["mqtt"].get("password"):
+            client.username_pw_set(config["mqtt"]["username"],
+                                   config["mqtt"]["password"])
+
         status_dead = {'status': 'dead'}
         client.will_set(self.status_topic,
                         json.dumps(status_dead), qos=2, retain=True)
