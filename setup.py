@@ -32,7 +32,7 @@ test_requirements.extend(requirements)
 
 setup(
     name='arwn',
-    version='1.2.0',
+    version='2.0.0',
     description="Collect 433Mhz weather sensor data and publish to mqtt",
     long_description=readme + '\n\n' + history,
     author="Sean Dague",
