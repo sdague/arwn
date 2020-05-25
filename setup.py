@@ -11,11 +11,8 @@ except ImportError:
 with open('README.rst') as readme_file:
     readme = readme_file.read()
 
-with open('HISTORY.rst') as history_file:
-    history = history_file.read()
-
 requirements = [
-    'pyyaml>=3',
+    'pyyaml>=5.1',
     'python-daemon',
     'paho-mqtt>=1.1',
     'pyserial>=3',
@@ -34,7 +31,7 @@ setup(
     name='arwn',
     version='2.0.0',
     description="Collect 433Mhz weather sensor data and publish to mqtt",
-    long_description=readme + '\n\n' + history,
+    long_description=readme,
     author="Sean Dague",
     author_email='sean@dague.net',
     url='https://github.com/sdague/arwn',
