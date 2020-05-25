@@ -21,3 +21,5 @@ script: tox
 deploy:
   provider: pypi
   user: "__token__"
+  on:
+    tags: true
