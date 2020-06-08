@@ -64,7 +64,7 @@ def event_loop(config):
 
 def main():
     args = parse_args()
-    config = yaml.load(open(args.config, 'r').read())
+    config = yaml.safe_load(open(args.config, 'r').read())
     if not args.foreground:
         fh, logger = setup_logger(config.get('logfile', args.logfile))
         try:

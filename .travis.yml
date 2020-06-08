@@ -1,7 +1,13 @@
+cache: pip
+install: pip install -U tox
+language: python
+script: tox
+
 jobs:
   fast_finish: true
   include:
-  - python: '3.6'
+  - stage: test
+    python: '3.6'
     env: TOXENV=pep8
   - python: '3.5'
     env: TOXENV=py35
@@ -11,14 +17,14 @@ jobs:
     env: TOXENV=py37
   - python: '3.8'
     env: TOXENV=py38
-cache: pip
-install: pip install -U tox
-language: python
-script: tox
-deploy:
-  provider: pypi
-  username: __token__
-  on:
-    tags: true
-  password:
-    secure: "teRnpEhMsgHJ8pOJoSnQLbTapo5S0Yz+uZIlUz94gADQd69/DnWlfiCrxRuPGXVkIZB2PbZDjHKzmtMtjQNWdRVNMXqR1zVd7PV88yifhIHeeMNtdMR5oHk0DB7bN9ScaoNtC3FLDdE0jmQXGI+cYgzGRNqIKglWap3HJgZUs6ijRhl+XHK290G2uvfz48TawZC34gIG3RHvWMFi0zkzMXg46TUaYqEx3115bkSkMePk4OVKgQicdFDESbG5aWH4NOOmPm0KsWregj9SYWSKk1Z2q03oeK6qxieRO60PtsJ0MVkaKkzpKj0PZ54kDguIWckzpvWqiuEvgN/tQZUAEYIij1TM6e5C8T22Wiogq05tKbCCTax4IedynY9hTcTUaTuhrfDRY50rGK9wUxuzpaj7HuQhX+omlFB4+59nzfajQtOpSNUrhGUqJtzyLdTo6nv0dsaWE/FR6veZObWD0r8O/sunM37gsTfcp5OR0An6mAxiWHK9jij7l+N4cwYAs9tYBz0u5LCdC0+EzX1kwnRO6gPNgmIJs2tsFu+WBdEDRNy/gh03JHR4Ow+VrZWnTae6tjEBMJHzaRzBeSF3p40z5L2W2ILKmdIfFYyjXrpnPEiDr3sxi8f/t9cEK6vwqrcxISKSVe1qELXAd4Ph3xWWJjaFmmEFM0SDUDl6fIM="
+  - stage: deploy
+    script: ""
+    install: ""
+    deploy:
+      provider: pypi
+      username: __token__
+      on:
+        tags: true
+      password:
+        secure: "teRnpEhMsgHJ8pOJoSnQLbTapo5S0Yz+uZIlUz94gADQd69/DnWlfiCrxRuPGXVkIZB2PbZDjHKzmtMtjQNWdRVNMXqR1zVd7PV88yifhIHeeMNtdMR5oHk0DB7bN9ScaoNtC3FLDdE0jmQXGI+cYgzGRNqIKglWap3HJgZUs6ijRhl+XHK290G2uvfz48TawZC34gIG3RHvWMFi0zkzMXg46TUaYqEx3115bkSkMePk4OVKgQicdFDESbG5aWH4NOOmPm0KsWregj9SYWSKk1Z2q03oeK6qxieRO60PtsJ0MVkaKkzpKj0PZ54kDguIWckzpvWqiuEvgN/tQZUAEYIij1TM6e5C8T22Wiogq05tKbCCTax4IedynY9hTcTUaTuhrfDRY50rGK9wUxuzpaj7HuQhX+omlFB4+59nzfajQtOpSNUrhGUqJtzyLdTo6nv0dsaWE/FR6veZObWD0r8O/sunM37gsTfcp5OR0An6mAxiWHK9jij7l+N4cwYAs9tYBz0u5LCdC0+EzX1kwnRO6gPNgmIJs2tsFu+WBdEDRNy/gh03JHR4Ow+VrZWnTae6tjEBMJHzaRzBeSF3p40z5L2W2ILKmdIfFYyjXrpnPEiDr3sxi8f/t9cEK6vwqrcxISKSVe1qELXAd4Ph3xWWJjaFmmEFM0SDUDl6fIM="
+      skip_existing: true
