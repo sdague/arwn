@@ -1,7 +1,11 @@
 from arwn import temperature
 from arwn.sensor.sensor import Sensor
+from datetime import datetime
 
 class Acurite5n1(Sensor):
+    previous_time = datetime.now()
+    previous_rain_in = 0.000
+
     def __init__(self, data):
         self.data = {}
         if "id" in data:
@@ -21,7 +25,21 @@ class Acurite5n1(Sensor):
             self.data['wind_units'] = 'mph'
         if "rain_in" in data:
             self.data['total'] = round(data['rain_in'], 2)
-            self.data['rain_units'] = 'in'
+            self.data['rain_rate'] = round(self.calculate_rain_rate(data['time'], data['rain_in']), 2)
+            self.data['rain_units'] = 'in'            
+            Acurite5n1.previous_rain_in = data['rain_in']
+            Acurite5n1.previous_time = data['time']
+    
+    def calculate_rain_rate(self, time, rain_in):
+        parsed_time = datetime.fromisoformat(time)
+        rain_rate_per_minute = 0
+
+        if parsed_time != Acurite5n1.previous_time:
+            rain_amount = rain_in - Acurite5n1.previous_rain_in
+            time_difference = (parsed_time - Acurite5n1.previous_time).seconds
+            rain_rate_per_minute = (rain_amount / time_difference) * 60
+
+        return rain_rate_per_minute
     
     @property
     def is_temp(self):
