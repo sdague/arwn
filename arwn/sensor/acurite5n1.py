@@ -1,6 +1,7 @@
+from dateutil import parser
+from datetime import datetime
 from arwn import temperature
 from arwn.sensor.sensor import Sensor
-from datetime import datetime
 
 class Acurite5n1(Sensor):
     previous_time = datetime.now()
@@ -31,7 +32,7 @@ class Acurite5n1(Sensor):
             Acurite5n1.previous_time = data['time']
     
     def calculate_rain_rate(self, time, rain_in):
-        parsed_time = datetime.fromisoformat(time)
+        parsed_time = parser.parse(time)
         rain_rate_per_minute = 0
 
         if parsed_time != Acurite5n1.previous_time:
