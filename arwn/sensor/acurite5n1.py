@@ -89,6 +89,7 @@ class Acurite5n1(Sensor):
         newSensor.sensor_id = self.sensor_id
         newSensor.data['total'] = self.data['total']
         newSensor.data['units'] = self.data['rain_units']
+        newSensor.data['rate'] = self.data['rain_rate']
         return newSensor
 
     def as_moist(self):
