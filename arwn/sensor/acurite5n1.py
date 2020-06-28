@@ -30,12 +30,15 @@ class Acurite5n1(Sensor):
         if "rain_in" in data:
             self.data['total'] = round(data['rain_in'], 2)
             self.data['rain_rate'] = round(self.calculate_rain_rate(data['time'], data['rain_in']), 2)
-            self.data['rain_units'] = 'in'            
-            Acurite5n1.previous_rain_in = data['rain_in']            
-        if "time" in data:            
-            Acurite5n1.previous_time = Acurite5n1.parse_time(data['time'])
-            
+            self.data['rain_units'] = 'in'
+        self.log_historical_data(data)
     
+    def log_historical_data(self, data):
+        if "time" in data:
+            Acurite5n1.previous_time = Acurite5n1.parse_time(data['time'])
+        if "rain_in" in data:            
+            Acurite5n1.previous_rain_in = data['rain_in']
+
     def calculate_rain_rate(self, time, rain_in):
         parsed_time = Acurite5n1.parse_time(time)        
         rain_amount = rain_in - Acurite5n1.previous_rain_in
