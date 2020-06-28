@@ -217,6 +217,7 @@ class MQTT(object):
 
     def send(self, topic, payload, retain=False):
         topic = "%s/%s" % (self.root, topic)
+        logger.debug("sending mqtt packet to %s topic" % topic)
         self.client.publish(topic, json.dumps(payload), retain=retain)
 
 
