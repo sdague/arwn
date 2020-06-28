@@ -35,7 +35,8 @@ class Acurite5n1(Sensor):
             self.data['rain_rate'] = round(self.calculate_rain_rate(data['time'], data['rain_in']), 2)
             self.data['rain_units'] = 'in'            
             Acurite5n1.previous_rain_in = data['rain_in']
-            Acurite5n1.previous_time = Acurite5n1.parse_time(data['time'])
+            
+        Acurite5n1.previous_time = Acurite5n1.parse_time(data['time'])
     
     def calculate_rain_rate(self, time, rain_in):
         parsed_time = Acurite5n1.parse_time(time)        
