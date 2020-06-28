@@ -21,7 +21,7 @@ import paho.mqtt.client as paho
 
 from arwn import temperature
 from arwn import handlers
-from arwn.sensor.acurite5n1 import Acurite5n1
+from arwn.sensor.sensor_factory import SensorFactory
 from arwn.sensor.sensor import Sensor
 from arwn.vendor.RFXtrx import lowlevel as ll
 from arwn.vendor.RFXtrx.pyserial import PySerialTransport
@@ -270,7 +270,7 @@ class RTL433Collector(object):
         data = json.loads(line)
         self.log_data(data)
         if data["model"] == "Acurite-5n1":
-            return Acurite5n1(data)
+            return SensorFactory.create(data)
         else:
             packet = SensorPacket()
             packet.from_json(data)
