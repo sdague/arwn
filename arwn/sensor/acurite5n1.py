@@ -7,7 +7,7 @@ class Acurite5n1(Sensor):
     previous_rain_in = 0.000
 
     def __init__(self, data):
-        if self.parse_time(data['time']) == Acurite5n1.previous_time:
+        if "time" in data and self.parse_time(data['time']) == Acurite5n1.previous_time:
             return None
 
         self.data = {} 
