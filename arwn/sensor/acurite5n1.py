@@ -11,9 +11,6 @@ class Acurite5n1(Sensor):
         return datetime.strptime(time, "%Y-%m-%d %H:%M:%S")
 
     def __init__(self, data):
-        if "time" in data and self.parse_time(data['time']) == Acurite5n1.previous_time:
-            return None
-
         self.data = {} 
         if "id" in data:
             self.sensor_id = "%s:%s" % (data['id'], data.get('channel', 0))
@@ -34,9 +31,10 @@ class Acurite5n1(Sensor):
             self.data['total'] = round(data['rain_in'], 2)
             self.data['rain_rate'] = round(self.calculate_rain_rate(data['time'], data['rain_in']), 2)
             self.data['rain_units'] = 'in'            
-            Acurite5n1.previous_rain_in = data['rain_in']
+            Acurite5n1.previous_rain_in = data['rain_in']            
+        if "time" in data:            
+            Acurite5n1.previous_time = Acurite5n1.parse_time(data['time'])
             
-        Acurite5n1.previous_time = Acurite5n1.parse_time(data['time'])
     
     def calculate_rain_rate(self, time, rain_in):
         parsed_time = Acurite5n1.parse_time(time)        
