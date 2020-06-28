@@ -15,18 +15,23 @@ class AcuriteTower(Sensor):
             self.data['dewpoint'] = round(temp.dewpoint(data['humidity']), 1)
             self.data['humid'] = round(data['humidity'], 1)
 
+    @property
     def is_wind(self):
         return False
 
+    @property
     def is_temp(self):
         return "temp" in self.data
 
+    @property
     def is_baro(self):
         return False
 
+    @property
     def is_rain(self):
         return False
 
+    @property
     def is_moist(self):
         return False
 
