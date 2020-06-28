@@ -7,7 +7,10 @@ class Acurite5n1(Sensor):
     previous_rain_in = 0.000
 
     def __init__(self, data):
-        self.data = {}
+        if self.parse_time(data['time']) == Acurite5n1.previous_time
+            return None
+
+        self.data = {} 
         if "id" in data:
             self.sensor_id = "%s:%s" % (data['id'], data.get('channel', 0))
         if "battery_ok" in data:
@@ -28,18 +31,18 @@ class Acurite5n1(Sensor):
             self.data['rain_rate'] = round(self.calculate_rain_rate(data['time'], data['rain_in']), 2)
             self.data['rain_units'] = 'in'            
             Acurite5n1.previous_rain_in = data['rain_in']
-            Acurite5n1.previous_time = datetime.strptime(data['time'], "%Y-%m-%d %H:%M:%S")
+            Acurite5n1.previous_time = self.parse_time(data['time'])
     
     def calculate_rain_rate(self, time, rain_in):
-        parsed_time = datetime.strptime(time, "%Y-%m-%d %H:%M:%S")
-        rain_rate_per_minute = 0
-
-        if parsed_time != Acurite5n1.previous_time:
-            rain_amount = rain_in - Acurite5n1.previous_rain_in
-            time_difference = (parsed_time - Acurite5n1.previous_time).seconds
-            rain_rate_per_minute = (rain_amount / time_difference) * 60
+        parsed_time = self.parse_time(time)        
+        rain_amount = rain_in - Acurite5n1.previous_rain_in
+        time_difference = (parsed_time - Acurite5n1.previous_time).seconds
+        rain_rate_per_minute = (rain_amount / time_difference) * 60
 
         return rain_rate_per_minute
+
+    def parse_time(self, time):
+        return datetime.strptime(time, "%Y-%m-%d %H:%M:%S")
     
     @property
     def is_temp(self):
