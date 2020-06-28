@@ -270,7 +270,7 @@ class RTL433Collector(object):
         line = self.rtl.stdout.readline()
         data = json.loads(line)
         self.log_data(data)
-        if data["model"] == "Acurite-5n1":
+        if "Acurite" in data["model"]:
             return SensorFactory.create(data)
         else:
             packet = SensorPacket()

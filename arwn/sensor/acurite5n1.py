@@ -1,5 +1,5 @@
 from datetime import datetime
-from arwn import temperature
+from arwn.temperature import Temperature
 from arwn.sensor.sensor import Sensor
 
 class Acurite5n1(Sensor):
@@ -17,8 +17,7 @@ class Acurite5n1(Sensor):
         if "battery_ok" in data:
             self.bat = data['battery_ok']
         if "temperature_F" in data:
-            temp = temperature.Temperature(
-                    "%sF" % data['temperature_F']).as_F()
+            temp = Temperature("%sF" % data['temperature_F']).as_F()
             self.data['temp'] = round(temp.to_F(), 1)
             self.data['temp_units'] = 'F'
             self.data['dewpoint'] = round(temp.dewpoint(data['humidity']), 1)

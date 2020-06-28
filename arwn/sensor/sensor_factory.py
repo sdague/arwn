@@ -1,8 +1,7 @@
 import logging
 
 from arwn.sensor.acurite5n1 import Acurite5n1
-
-logger = logging.getLogger(__name__)
+from arwn.sensor.acurite_tower import AcuriteTower
 
 class SensorFactory(object):
     @staticmethod
@@ -12,6 +11,8 @@ class SensorFactory(object):
         
         if data["model"] == "Acurite-5n1":
             return SensorFactory.create_acurite_5n1(data)
+        if data["model"] == "Acurite-Tower":
+            return AcuriteTower(data)
 
         return None
 
