@@ -12,7 +12,7 @@ class SensorFactory(object):
         if data["model"] == "Acurite-5n1":
             return SensorFactory.create_acurite_5n1(data)
         if data["model"] == "Acurite-Tower":
-            return AcuriteTower(data)
+            return SensorFactory.create_acurite_tower(data)
 
         return None
 
@@ -20,5 +20,12 @@ class SensorFactory(object):
     def create_acurite_5n1(data):
         if Acurite5n1.parse_time(data["time"]) != Acurite5n1.previous_time:
             return Acurite5n1(data)
+        else:
+            return None
+
+    @staticmethod
+    def create_acurite_tower(data):
+        if AcuriteTower.parse_time(data["time"]) != AcuriteTower.previous_time:
+            return AcuriteTower(data)
         else:
             return None

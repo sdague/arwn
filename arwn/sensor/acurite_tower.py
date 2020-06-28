@@ -1,7 +1,15 @@
+from datetime import datetime
+
 from arwn.temperature import Temperature
 from arwn.sensor.sensor import Sensor
 
 class AcuriteTower(Sensor):
+    previous_time = datetime.now()
+
+    @staticmethod
+    def parse_time(time):
+        return datetime.strptime(time, "%Y-%m-%d %H:%M:%S")
+
     def __init__(self, data):
         self.data = {}
         if "id" in data:
@@ -14,6 +22,11 @@ class AcuriteTower(Sensor):
             self.data['units'] = 'F'
             self.data['dewpoint'] = round(temp.dewpoint(data['humidity']), 1)
             self.data['humid'] = round(data['humidity'], 1)
+        self.log_historical_data(data)
+    
+    def log_historical_data(self, data):
+        if "time" in data:
+            AcuriteTower.previous_time = AcuriteTower.parse_time(data['time'])
 
     @property
     def is_wind(self):
