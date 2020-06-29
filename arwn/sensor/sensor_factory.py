@@ -8,7 +8,7 @@ class SensorFactory(object):
     def create(data):
         if "model" not in data:
             return None
-        
+
         if data["model"] == "Acurite-5n1":
             return SensorFactory.create_acurite_5n1(data)
         if data["model"] == "Acurite-Tower":

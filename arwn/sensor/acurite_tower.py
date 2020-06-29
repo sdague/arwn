@@ -23,7 +23,7 @@ class AcuriteTower(Sensor):
             self.data['dewpoint'] = round(temp.dewpoint(data['humidity']), 1)
             self.data['humid'] = round(data['humidity'], 1)
         self.log_historical_data(data)
-    
+
     def log_historical_data(self, data):
         if "time" in data:
             AcuriteTower.previous_time = AcuriteTower.parse_time(data['time'])

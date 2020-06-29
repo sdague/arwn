@@ -12,7 +12,7 @@ class Acurite5n1(Sensor):
         return datetime.strptime(time, "%Y-%m-%d %H:%M:%S")
 
     def __init__(self, data):
-        self.data = {} 
+        self.data = {}
         if "id" in data:
             self.sensor_id = "%s:%s" % (data['id'], data.get('channel', 0))
         if "battery_ok" in data:
@@ -32,21 +32,21 @@ class Acurite5n1(Sensor):
             self.data['rain_rate'] = round(self.calculate_rain_rate(data['time'], data['rain_in']), 2)
             self.data['rain_units'] = 'in'
         self.log_historical_data(data)
-    
+
     def log_historical_data(self, data):
         if "time" in data:
             Acurite5n1.previous_time = Acurite5n1.parse_time(data['time'])
-        if "rain_in" in data:            
+        if "rain_in" in data:
             Acurite5n1.previous_rain_in = data['rain_in']
 
     def calculate_rain_rate(self, time, rain_in):
-        parsed_time = Acurite5n1.parse_time(time)        
+        parsed_time = Acurite5n1.parse_time(time)
         rain_amount = rain_in - Acurite5n1.previous_rain_in
         time_difference = (parsed_time - Acurite5n1.previous_time).seconds
         rain_rate_per_minute = (rain_amount / time_difference) * 60
 
         return rain_rate_per_minute
-    
+
     @property
     def is_temp(self):
         return "temp" in self.data
@@ -75,7 +75,7 @@ class Acurite5n1(Sensor):
         newSensor.data['direction'] = self.data['direction']
         newSensor.data['units'] = self.data['wind_units']
         return newSensor
-    
+
     def as_temp(self):
         newSensor = Acurite5n1({})
         newSensor.bat = self.bat
