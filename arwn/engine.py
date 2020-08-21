@@ -50,10 +50,16 @@ class SensorPacket(object):
     """Convert RFXtrx packet to native packet for ARWN"""
 
     def _set_type(self, packet):
+        logger.debug("Type: %d", self.stype)
+
         if self.stype != IS_NONE:
             return
+
         if isinstance(packet, dict):
             model = packet.get("model", "")
+            if model.startswith("Oregon-"):
+                model = model[7:]
+
             if model in TH_SENSORS:
                 self.stype |= IS_TEMP
                 self.stype |= IS_HUMID
@@ -76,6 +82,9 @@ class SensorPacket(object):
             self.stype |= IS_RAIN
         if isinstance(packet, ll.Wind):
             self.stype |= IS_WIND
+
+        if self.stype == IS_NONE:
+            logger.warning("Unknown sensor type: %s", packet)
 
     @property
     def is_temp(self):
@@ -105,6 +114,7 @@ class SensorPacket(object):
         self.data.update(kwargs)
 
     def from_json(self, data):
+        logger.debug("Packet json; %s", data)
         self._set_type(data)
         self.bat = data.get("battery", "NA")
 
@@ -129,8 +139,8 @@ class SensorPacket(object):
             self.data['pressure'] = data['pressure_hPa']
         if self.stype & IS_RAIN:
             # rtl_433 already converts to non metric here
-            self.data['total'] = round(data['rain_total'], 2)
-            self.data['rate'] = round(data['rain_rate'], 2)
+            self.data['total'] = round(data['rain_in'], 2)
+            self.data['rate'] = round(data['rain_rate_in_h'], 2)
             self.data['units'] = 'in'
         if self.stype & IS_WIND:
             mps2mph = 2.23694
@@ -211,6 +221,7 @@ class MQTT(object):
 
     def send(self, topic, payload, retain=False):
         topic = "%s/%s" % (self.root, topic)
+        logger.debug("Sending %s => %s", topic, payload)
         self.client.publish(topic, json.dumps(payload), retain=retain)
 
 
@@ -306,6 +317,7 @@ class Dispatcher(object):
         server = config['mqtt']['server']
         self.mqtt = MQTT(server, config)
         self.config = config
+        logger.debug("Config => %s", self.config)
 
     def _get_collector(self, config):
         col = config.get("collector")
@@ -329,6 +341,8 @@ class Dispatcher(object):
             if packet is None:
                 continue
             now = int(time.time())
+
+            logger.debug("%s", packet)
 
             # we send barometer sensors twice
             if packet.is_baro:
