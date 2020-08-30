@@ -192,7 +192,7 @@ class MQTT(object):
                             json.dumps(status_dead), retain=True)
 
         def on_message(client, userdata, msg):
-            payload = json.loads(msg.payload)
+            payload = json.loads(msg.payload.decode("utf-8"))
             handlers.run(self, msg.topic, payload)
             return True
 
@@ -264,7 +264,7 @@ class RTL433Collector(object):
 
     def __next__(self):
         line = self.rtl.stdout.readline()
-        data = json.loads(line)
+        data = json.loads(line.decode("utf-8"))
         self.log_data(data)
         packet = SensorPacket()
         packet.from_json(data)
