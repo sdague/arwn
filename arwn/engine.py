@@ -21,6 +21,8 @@ import paho.mqtt.client as paho
 
 from arwn import temperature
 from arwn import handlers
+from arwn.sensor.sensor_factory import SensorFactory
+from arwn.sensor.sensor import Sensor
 from arwn.vendor.RFXtrx import lowlevel as ll
 from arwn.vendor.RFXtrx.pyserial import PySerialTransport
 
@@ -105,15 +107,14 @@ class SensorPacket(object):
         self.data.update(kwargs)
 
     def from_json(self, data):
+        logger.debug(data)
         self._set_type(data)
         self.bat = data.get("battery", "NA")
 
         if "id" in data:
-            self.sensor_id = "%2.2x:%2.2x" % (data['id'],
-                                              data.get('channel', 0))
+            self.sensor_id = "%s:%s" % (data['id'], data.get('channel', 0))
         elif "sid" in data:
-            self.sensor_id = "%2.2x:%2.2x" % (data['sid'],
-                                              data.get('channel', 0))
+            self.sensor_id = "%s:%s" % (data['sid'], data.get('channel', 0))
         if self.stype & IS_TEMP:
             temp = temperature.Temperature(
                 "%sC" % data['temperature_C']).as_F()
@@ -205,6 +206,7 @@ class MQTT(object):
                         json.dumps(status_dead), qos=2, retain=True)
         client.on_connect = on_connect
         client.on_message = on_message
+        
         client.connect(self.server, self.port)
         client.loop_start()
         self.client = client
@@ -215,6 +217,7 @@ class MQTT(object):
 
     def send(self, topic, payload, retain=False):
         topic = "%s/%s" % (self.root, topic)
+        logger.debug("sending mqtt packet to %s topic" % topic)
         self.client.publish(topic, json.dumps(payload), retain=retain)
 
 
@@ -257,7 +260,8 @@ class RTL433Collector(object):
         logger.info("starting cmd: %s" % cmd)
         self.rtl = subprocess.Popen(cmd,
                                     stdout=subprocess.PIPE,
-                                    stdin=subprocess.PIPE)
+                                    stdin=subprocess.PIPE,
+                                    universal_newlines=True)
 
     def __iter__(self):
         return self
@@ -266,15 +270,18 @@ class RTL433Collector(object):
         line = self.rtl.stdout.readline()
         data = json.loads(line.decode("utf-8"))
         self.log_data(data)
-        packet = SensorPacket()
-        packet.from_json(data)
-        return packet
+        if "Acurite" in data["model"]:
+            return SensorFactory.create(data)
+        else:
+            packet = SensorPacket()
+            packet.from_json(data)
+            return packet
 
     def log_data(self, data):
         fields = [
             ("model", "(%(model)s)"),
-            ("id", "%(id)d:%(channel)d"),
-            ("sid", "%(sid)d:%(channel)d"),
+            ("id", "%(id)s:%(channel)s"),
+            ("sid", "%(sid)s:%(channel)s"),
             ("temperature_C", "%(temperature_C)sC"),
             ("temperature", "%(temperature)sF"),
             ("humidity", "%(humidity)s%%"),
@@ -370,10 +377,19 @@ class Dispatcher(object):
                     topic = "temperature/%s" % name
                 else:
                     topic = "unknown/%s" % packet.sensor_id
-                self.mqtt.send(topic, packet.as_json(timestamp=now))
+                if isinstance(packet, Sensor):
+                    self.mqtt.send(topic, packet.as_temp().as_json(timestamp=now))
+                else:
+                    self.mqtt.send(topic, packet.as_json(timestamp=now))
 
             if packet.is_wind:
-                self.mqtt.send("wind", packet.as_json(timestamp=now))
+                if isinstance(packet, Sensor):                    
+                    self.mqtt.send("wind", packet.as_wind().as_json(timestamp=now))
+                else:
+                    self.mqtt.send("wind", packet.as_json(timestamp=now))
 
             if packet.is_rain:
-                self.mqtt.send("rain", packet.as_json(timestamp=now))
+                if isinstance(packet, Sensor):
+                    self.mqtt.send("rain", packet.as_rain().as_json(timestamp=now))
+                else:
+                    self.mqtt.send("rain", packet.as_json(timestamp=now))
