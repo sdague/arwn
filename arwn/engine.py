@@ -116,7 +116,7 @@ class SensorPacket(object):
     def from_json(self, data):
         logger.debug("Packet json; %s", data)
         self._set_type(data)
-        self.bat = data.get("battery", "NA")
+        self.bat = data.get("battery_ok", 0)
 
         if "id" in data:
             self.sensor_id = "%2.2x:%2.2x" % (data['id'],
