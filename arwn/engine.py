@@ -144,9 +144,9 @@ class SensorPacket(object):
             self.data['units'] = 'in'
         if self.stype & IS_WIND:
             mps2mph = 2.23694
-            speed = round(float(data['average']) * mps2mph, 1)
-            gust = round(float(data['gust']) * mps2mph, 1)
-            self.data['direction'] = data['direction']
+            speed = round(float(data['wind_avg_m_s']) * mps2mph, 1)
+            gust = round(float(data['wind_max_m_s']) * mps2mph, 1)
+            self.data['direction'] = data['wind_dir_deg']
             self.data['speed'] = speed
             self.data['gust'] = gust
             self.data['units'] = 'mph'
