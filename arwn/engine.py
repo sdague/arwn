@@ -26,6 +26,8 @@ from arwn.vendor.RFXtrx.pyserial import PySerialTransport
 
 logger = logging.getLogger(__name__)
 
+MM2IN = 0.03937008
+
 IS_NONE = 0
 IS_TEMP = 1 << 0
 IS_BARO = 1 << 1
@@ -39,7 +41,7 @@ IS_MOIST = 1 << 5
 TH_SENSORS = ("THGR810", "THGR122N", "BHTR968")
 MOIST_SENSORS = ("Springfield Temperature & Moisture")
 WIND_SENSORS = ("WGR800")
-RAIN_SENSORS = ("PCR800")
+RAIN_SENSORS = ("PCR800", "Acurite-Rain899")
 BARO_SENSORS = ("BHTR968")
 
 MAX_TEMP = 150
@@ -129,8 +131,11 @@ class SensorPacket(object):
             self.data['pressure'] = data['pressure_hPa']
         if self.stype & IS_RAIN:
             # rtl_433 already converts to non metric here
-            self.data['total'] = round(data['rain_total'], 2)
-            self.data['rate'] = round(data['rain_rate'], 2)
+            if 'rain_mm' in data:
+                self.data['total'] = round(data['rain_mm'] * MM2IN, 3)
+            else:
+                self.data['total'] = round(data['rain_total'], 2)
+                self.data['rate'] = round(data['rain_rate'], 2)
             self.data['units'] = 'in'
         if self.stype & IS_WIND:
             mps2mph = 2.23694
@@ -247,6 +252,7 @@ class RFXCOMCollector(object):
 
 class RTL433Collector(object):
     def __init__(self, devices=None):
+        global RAIN_SENSORS
         cmd = ["rtl_433", "-F", "json"]
         logger.error(devices)
         logger.error(type(devices))
@@ -254,6 +260,8 @@ class RTL433Collector(object):
             for d in devices:
                 cmd.append("-R")
                 cmd.append("%s" % d)
+                if d == 40:
+                    RAIN_SENSORS = ("Acurite-Rain899")
         logger.info("starting cmd: %s" % cmd)
         self.rtl = subprocess.Popen(cmd,
                                     stdout=subprocess.PIPE,
