@@ -41,7 +41,7 @@ IS_MOIST = 1 << 5
 TH_SENSORS = ("THGR810", "THGR122N", "BHTR968")
 MOIST_SENSORS = ("Springfield Temperature & Moisture")
 WIND_SENSORS = ("WGR800")
-RAIN_SENSORS = ("PCR800", "Acurite-Rain899")
+RAIN_SENSORS = ("Acurite-Rain899")
 BARO_SENSORS = ("BHTR968")
 
 MAX_TEMP = 150
@@ -271,8 +271,6 @@ class RTL433Collector(object):
             for d in devices:
                 cmd.append("-R")
                 cmd.append("%s" % d)
-                if d == 40:
-                    RAIN_SENSORS = ("Acurite-Rain899")
         logger.info("starting cmd: %s" % cmd)
         self.rtl = subprocess.Popen(cmd,
                                     stdout=subprocess.PIPE,
