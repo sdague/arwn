@@ -170,11 +170,11 @@ class WeatherUnderground(MQTTAction):
     regex = r"^\w+/(wind|temperature/Outside|rain/today|barometer)$"
     temp = None
     dewpoint = None
-    rain = None
+    rain = 0
     pressure = None
-    winddir = None
-    windspeed = None
-    windgust = None
+    winddir = 0
+    windspeed = 0
+    windgust = 0
 
     def is_ready(self):
         return (self.temp is not None and
