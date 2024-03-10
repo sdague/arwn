@@ -35,7 +35,7 @@ setup(
     author="Sean Dague",
     author_email='sean@dague.net',
     url='https://github.com/sdague/arwn',
-    packages=['arwn', 'arwn.cmd', 'arwn.vendor', 'arwn.vendor.RFXtrx'],
+    packages=['arwn', 'arwn.cmd'],
     package_dir={
         'arwn': 'arwn',
     },

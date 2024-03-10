@@ -21,8 +21,6 @@ import paho.mqtt.client as paho
 
 from arwn import temperature
 from arwn import handlers
-from arwn.vendor.RFXtrx import lowlevel as ll
-from arwn.vendor.RFXtrx.pyserial import PySerialTransport
 
 logger = logging.getLogger(__name__)
 
@@ -39,10 +37,11 @@ IS_MOIST = 1 << 5
 # List of known sensor models from rtl_433, please feel free to patch
 # and add any that you have here.
 TH_SENSORS = ("THGR810", "THGR122N", "BHTR968")
-MOIST_SENSORS = ("Springfield Temperature & Moisture")
-WIND_SENSORS = ("WGR800")
-RAIN_SENSORS = ("Acurite-Rain899")
-BARO_SENSORS = ("BHTR968")
+MOIST_SENSORS = "Springfield Temperature & Moisture"
+WIND_SENSORS = "WGR800"
+# TODO, reenable other sensor
+RAIN_SENSORS = "Acurite-Rain899"
+BARO_SENSORS = "BHTR968"
 
 MAX_TEMP = 150
 MIN_TEMP = -40
@@ -75,16 +74,6 @@ class SensorPacket(object):
                 self.stype |= IS_TEMP
                 self.stype |= IS_MOIST
 
-        # if this is an RFXCOM packet
-        if isinstance(packet, ll.TempHumid):
-            self.stype |= IS_TEMP
-        if isinstance(packet, ll.TempHumidBaro):
-            self.stype |= IS_TEMP
-        if isinstance(packet, ll.RainGauge):
-            self.stype |= IS_RAIN
-        if isinstance(packet, ll.Wind):
-            self.stype |= IS_WIND
-
         if self.stype == IS_NONE:
             logger.warning("Unknown sensor type: %s", packet)
 
@@ -110,7 +99,7 @@ class SensorPacket(object):
 
     def __init__(self, stype=IS_NONE, bat=0, sensor_id=0, **kwargs):
         self.stype = stype
-        self.bat = bat,
+        self.bat = bat
         self.sensor_id = sensor_id
         self.data = {}
         self.data.update(kwargs)
@@ -121,65 +110,37 @@ class SensorPacket(object):
         self.bat = data.get("battery_ok", 0)
 
         if "id" in data:
-            self.sensor_id = "%2.2x:%2.2x" % (data['id'],
-                                              data.get('channel', 0))
+            self.sensor_id = "%2.2x:%2.2x" % (data["id"], data.get("channel", 0))
         elif "sid" in data:
-            self.sensor_id = "%2.2x:%2.2x" % (data['sid'],
-                                              data.get('channel', 0))
+            self.sensor_id = "%2.2x:%2.2x" % (data["sid"], data.get("channel", 0))
         if self.stype & IS_TEMP:
-            temp = temperature.Temperature(
-                "%sC" % data['temperature_C']).as_F()
-            self.data['temp'] = round(temp.to_F(), 1)
-            self.data['units'] = 'F'
+            temp = temperature.Temperature("%sC" % data["temperature_C"]).as_F()
+            self.data["temp"] = round(temp.to_F(), 1)
+            self.data["units"] = "F"
         # note, we always assume HUMID sensors are temp sensors
         if self.stype & IS_HUMID:
-            self.data['dewpoint'] = round(temp.dewpoint(data['humidity']), 1)
-            self.data['humid'] = round(data['humidity'], 1)
+            self.data["dewpoint"] = round(temp.dewpoint(data["humidity"]), 1)
+            self.data["humid"] = round(data["humidity"], 1)
         if self.stype & IS_MOIST:
-            self.data['moisture'] = data['moisture']
+            self.data["moisture"] = data["moisture"]
         if self.stype & IS_BARO:
-            self.data['pressure'] = data['pressure_hPa']
+            self.data["pressure"] = data["pressure_hPa"]
         if self.stype & IS_RAIN:
             # rtl_433 already converts to non metric here
-            if 'rain_mm' in data:
-                self.data['total'] = round(data['rain_mm'] * MM2IN, 3)
+            if "rain_mm" in data:
+                self.data["total"] = round(data["rain_mm"] * MM2IN, 3)
             else:
-                self.data['total'] = round(data['rain_in'], 2)
-                self.data['rate'] = round(data['rain_rate_in_h'], 2)
-            self.data['units'] = 'in'
+                self.data["total"] = round(data["rain_in"], 2)
+                self.data["rate"] = round(data["rain_rate_in_h"], 2)
+            self.data["units"] = "in"
         if self.stype & IS_WIND:
             mps2mph = 2.23694
-            speed = round(float(data['wind_avg_m_s']) * mps2mph, 1)
-            gust = round(float(data['wind_max_m_s']) * mps2mph, 1)
-            self.data['direction'] = data['wind_dir_deg']
-            self.data['speed'] = speed
-            self.data['gust'] = gust
-            self.data['units'] = 'mph'
-
-    def from_packet(self, packet):
-        self._set_type(packet)
-        self.bat = getattr(packet, 'battery', -1)
-        self.sensor_id = packet.id_string
-        if self.stype & IS_TEMP:
-            temp = temperature.Temperature("%sC" % packet.temp).as_F()
-            self.data['temp'] = round(temp.to_F(), 1)
-            self.data['dewpoint'] = round(temp.dewpoint(packet.humidity), 1)
-            self.data['humid'] = round(packet.humidity, 1)
-            self.data['units'] = 'F'
-        if self.stype & IS_BARO:
-            self.data['pressure'] = packet.baro
-        if self.stype & IS_RAIN:
-            self.data['total'] = round(packet.raintotal / 25.4, 2)
-            self.data['rate'] = round(packet.rainrate / 25.4, 2)
-            self.data['units'] = 'in'
-        if self.stype & IS_WIND:
-            mps2mph = 2.23694
-            speed = round(float(packet.average_speed) * mps2mph, 1)
-            gust = round(float(packet.gust) * mps2mph, 1)
-            self.data['direction'] = packet.direction
-            self.data['speed'] = speed
-            self.data['gust'] = gust
-            self.data['units'] = 'mph'
+            speed = round(float(data["wind_avg_m_s"]) * mps2mph, 1)
+            gust = round(float(data["wind_max_m_s"]) * mps2mph, 1)
+            self.data["direction"] = data["wind_dir_deg"]
+            self.data["speed"] = speed
+            self.data["gust"] = gust
+            self.data["units"] = "mph"
 
     def as_json(self, **kwargs):
         data = dict(bat=self.bat, sensor_id=self.sensor_id)
@@ -199,12 +160,10 @@ class MQTT(object):
         self.status_topic = "%s/status" % self.root
 
         def on_connect(client, userdata, flags, rc):
-            status = {'status': 'alive', 'timestamp': int(time.time())}
+            status = {"status": "alive", "timestamp": int(time.time())}
             client.subscribe("%s/#" % self.root)
-            client.publish(
-                self.status_topic, json.dumps(status), qos=2, retain=True)
-            client.will_set(self.status_topic,
-                            json.dumps(status_dead), retain=True)
+            client.publish(self.status_topic, json.dumps(status), qos=2, retain=True)
+            client.will_set(self.status_topic, json.dumps(status_dead), retain=True)
 
         def on_message(client, userdata, msg):
             payload = json.loads(msg.payload.decode("utf-8"))
@@ -212,12 +171,12 @@ class MQTT(object):
             return True
 
         if config["mqtt"].get("username") and config["mqtt"].get("password"):
-            client.username_pw_set(config["mqtt"]["username"],
-                                   config["mqtt"]["password"])
+            client.username_pw_set(
+                config["mqtt"]["username"], config["mqtt"]["password"]
+            )
 
-        status_dead = {'status': 'dead'}
-        client.will_set(self.status_topic,
-                        json.dumps(status_dead), qos=2, retain=True)
+        status_dead = {"status": "dead"}
+        client.will_set(self.status_topic, json.dumps(status_dead), qos=2, retain=True)
         client.on_connect = on_connect
         client.on_message = on_message
         client.connect(self.server, self.port)
@@ -234,36 +193,8 @@ class MQTT(object):
         self.client.publish(topic, json.dumps(payload), retain=retain)
 
 
-class RFXCOMCollector(object):
-
-    def __init__(self, device):
-        self.transport = PySerialTransport(device)
-        self.transport.reset()
-        self.unparsable = 0
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        try:
-            event = self.transport.receive_blocking()
-            self.unparsable = 0
-        except Exception:
-            logger.exception("Got an unparsable byte")
-            self.unparsable += 1
-            if self.unparsable > 10:
-                raise
-            return None
-        logger.debug(event)
-        # general case, temp, rain, wind
-        packet = SensorPacket()
-        packet.from_packet(event.device.pkt)
-        return packet
-
-
 class RTL433Collector(object):
     def __init__(self, devices=None):
-        global RAIN_SENSORS
         cmd = ["rtl_433", "-F", "json"]
         logger.error(devices)
         logger.error(type(devices))
@@ -272,9 +203,7 @@ class RTL433Collector(object):
                 cmd.append("-R")
                 cmd.append("%s" % d)
         logger.info("starting cmd: %s" % cmd)
-        self.rtl = subprocess.Popen(cmd,
-                                    stdout=subprocess.PIPE,
-                                    stdin=subprocess.PIPE)
+        self.rtl = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
 
     def __iter__(self):
         return self
@@ -297,12 +226,12 @@ class RTL433Collector(object):
             ("humidity", "%(humidity)s%%"),
             ("moisture", "Moist:%(moisture)s"),
             ("pressure_hPa", "%(pressure_hPa)shPa"),
-            ("direction", u"%(direction)s" + u"\u00b0"),
+            ("direction", "%(direction)s" + "\u00b0"),
             ("gust", "Gust:%(gust)s"),
             ("average", "Speed:%(average)s"),
             ("rain_total", "Total:%(rain_total)s"),
             ("rain_rate", "Rate:%(rain_rate)s"),
-            ("battery", "bat:%(battery)s")
+            ("battery", "bat:%(battery)s"),
         ]
         subset = []
         for item in fields:
@@ -324,29 +253,18 @@ class Dispatcher(object):
     def __init__(self, config):
         self._get_collector(config)
         self.names = config["names"]
-        server = config['mqtt']['server']
+        server = config["mqtt"]["server"]
         self.mqtt = MQTT(server, config)
         self.config = config
         logger.debug("Config => %s", self.config)
 
     def _get_collector(self, config):
         col = config.get("collector")
-        if col:
-            ctype = col.get("type")
-            if ctype == "rtl433":
-                # devices to limit to
-                devices = col.get("devices", None)
-                self.collector = RTL433Collector(devices)
-            elif ctype == "rfxcom":
-                device = col["device"]
-                self.collector = RFXCOMCollector(device)
-        else:
-            # fall back for existing configs
-            device = config["device"]
-            self.collector = RFXCOMCollector(device)
+        # devices to limit to
+        devices = col.get("devices", None)
+        self.collector = RTL433Collector(devices)
 
     def loopforever(self):
-
         for packet in self.collector:
             if packet is None:
                 continue
@@ -356,33 +274,29 @@ class Dispatcher(object):
 
             # we send barometer sensors twice
             if packet.is_baro:
-                self.mqtt.send("barometer", packet.as_json(
-                    units="mbar",
-                    timestamp=now))
+                self.mqtt.send("barometer", packet.as_json(units="mbar", timestamp=now))
 
             if packet.is_moist:
                 # The reading of the moisture packets goes flakey a bit, apply
                 # some basic boundary conditions to it.
-                if packet.data['moisture'] > 10 or packet.data['temp'] > 150:
+                if packet.data["moisture"] > 10 or packet.data["temp"] > 150:
                     logger.warn(
-                        "Packet moisture data makes no sense: %s => %s" %
-                        (packet, packet.as_json()))
+                        "Packet moisture data makes no sense: %s => %s"
+                        % (packet, packet.as_json())
+                    )
                     continue
 
                 name = self.names.get(packet.sensor_id)
                 if name:
                     topic = "moisture/%s" % name
-                    self.mqtt.send(topic, packet.as_json(
-                        units=".",
-                        timestamp=now))
+                    self.mqtt.send(topic, packet.as_json(units=".", timestamp=now))
 
             if packet.is_temp:
-                if (packet.data['temp'] > MAX_TEMP or
-                    packet.data['temp'] < MIN_TEMP):
-
+                if packet.data["temp"] > MAX_TEMP or packet.data["temp"] < MIN_TEMP:
                     logger.warn(
-                        "Packet temp data makes no sense: %s => %s" %
-                        (packet, packet.as_json()))
+                        "Packet temp data makes no sense: %s => %s"
+                        % (packet, packet.as_json())
+                    )
                     continue
 
                 name = self.names.get(packet.sensor_id)
