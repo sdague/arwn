@@ -1,10 +1,9 @@
 # configuration for the collector
 collector:
-  # one of `rtl433` or `rfxcom`
+  # at this time only `rtl433` is supported
   type: rtl433
-  # usb device name for `rfxcom`
-  # device: /dev/ttyUSB0
-
+  # retrict to only these devices for scan
+  devices: [12, 40, 53]
 # weather underground reporting information
 wunderground:
   user: $EMAIL
@@ -18,7 +17,7 @@ mqtt:
   # can change this if you need to. This should only really be used
   # for testing so that you can run 2 in parallel.
   #
-  # root: $TOPIC  
+  # root: $TOPIC
   # username: $USER
   # password: $PASS
 
