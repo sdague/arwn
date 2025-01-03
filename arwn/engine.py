@@ -196,6 +196,11 @@ class MQTT(object):
         self.port = port
         self.config = config
         self.root = config["mqtt"].get("root", "arwn")
+        self.user = config["mqtt"].get("user")
+        self.passwd = config["mqtt"].get("passwd")
+        if (self.user and self.passwd):
+            client.username_pw_set(self.user, self.passwd)
+
         self.status_topic = "%s/status" % self.root
 
         def on_connect(client, userdata, flags, rc):
