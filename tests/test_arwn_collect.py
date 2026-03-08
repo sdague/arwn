@@ -15,8 +15,6 @@ import pytest
 
 from arwn.cmd import collect
 
-from . import arwn_fixtures
-
 
 @mock.patch("arwn.cmd.collect.event_loop")
 def test_start_in_forground(evloop, sample_config, capsys):
