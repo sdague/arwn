@@ -46,7 +46,8 @@ clean-test:
 	rm -fr htmlcov/
 
 lint:
-	flake8 arwn tests
+	black --check arwn tests
+	isort --check-only arwn tests
 
 test:
 	python setup.py test
