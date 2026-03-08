@@ -9,33 +9,22 @@ Tests for `arwn` module.
 """
 
 import sys
+from unittest import mock
 
-import mock
-import testtools
-import unittest
+import pytest
 
 from arwn.cmd import collect
 
 from . import arwn_fixtures
 
 
-class TestArwnCollect(testtools.TestCase):
+@mock.patch("arwn.cmd.collect.event_loop")
+def test_start_in_forground(evloop, sample_config, capsys):
+    """Test starting arwn in foreground mode."""
+    testargs = ["collect", "-f", "-c", sample_config]
+    with mock.patch.object(sys, "argv", testargs):
+        collect.main()
 
-    @mock.patch('arwn.cmd.collect.event_loop')
-    def test_start_in_forground(self, evloop):
-        cfg = arwn_fixtures.SampleConfig()
-        stdout = arwn_fixtures.CaptureStdout()
-        self.useFixture(stdout)
-        self.useFixture(cfg)
-
-        testargs = ["collect", "-f", "-c", cfg.path]
-        with mock.patch.object(sys, 'argv', testargs):
-            collect.main()
-
-        self.assertIn("[DEBUG] root: Starting arwn in foreground",
-                      str(stdout))
-        self.assertTrue(evloop.called, "Eventloop not called")
-
-
-if __name__ == '__main__':
-    sys.exit(unittest.main())
+    captured = capsys.readouterr()
+    assert "[DEBUG] root: Starting arwn in foreground" in captured.out
+    assert evloop.called, "Eventloop not called"

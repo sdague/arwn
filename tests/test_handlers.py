@@ -9,15 +9,16 @@ Tests for `arwn` module.
 """
 
 import datetime
-import mock
 import time
-import unittest
+
+import pytest
+from unittest import mock
 
 from arwn import engine  # noqa
 from arwn import handlers  # noqa
 
 
-class FakeClient(object):
+class FakeClient:
     def __init__(self):
         super(FakeClient, self).__init__()
         self.log = []
@@ -48,199 +49,204 @@ Y1D365 = mktime(2016, 12, 31, 12)
 Y1D365_1 = mktime(2016, 12, 31, 20)
 
 
-class TestArwnHandlers(unittest.TestCase):
-
-    def setUp(self):
-        handlers.setup()
-
-    def test_called_for_rain(self):
-        client = mock.MagicMock()
-
-        rain_data = {"total": 10.0}
-
-        handlers.run(client, "arwn/rain", rain_data)
-        self.assertEqual(handlers.LAST_RAIN, rain_data)
-        self.assertEqual(handlers.LAST_RAIN_TOTAL, None)
-        # just making sure we call across this boundary
-        client.called_once_with("totals/rain", rain_data)
-
-    def test_updates_rain_total(self):
-        """Test that we initialize LAST_RAIN_TOTAL.
-
-        LAST_RAIN_TOTAL needs to be initialized if it wasn't initially
-        on the first packet into the system if it's never been before.
-
-        This handles the case of a completely new environment where
-        there was no retain message.
-        """
-
-        client = FakeClient()
-
-        rain_data = {"total": 10.0, "timestamp": DAY1}
-        rain_data2 = {"total": 11.0, "timestamp": DAY1H1}
-
-        handlers.run(client, "arwn/rain", rain_data)
-        self.assertEqual(handlers.LAST_RAIN, rain_data)
-        self.assertEqual(handlers.LAST_RAIN_TOTAL, rain_data)
-        handlers.run(client, "arwn/rain", rain_data2)
-        self.assertEqual(handlers.LAST_RAIN, rain_data2)
-        self.assertEqual(handlers.LAST_RAIN_TOTAL, rain_data)
-
-    def test_updates_rain_total_retain(self):
-        """Test that we initialize LAST_RAIN_TOTAL.
-
-        LAST_RAIN_TOTAL needs to be initialized if it wasn't initially
-        on the first packet into the system if it's never been before.
-
-        This handles the case of a completely new environment where
-        there was no retain message.
-        """
-
-        client = FakeClient()
-
-        rain_data = {"total": 10.0, "timestamp": DAY1}
-        rain_data2 = {"total": 11.0, "timestamp": DAY1H1}
-
-        handlers.run(client, "arwn/totals/rain", rain_data)
-        self.assertEqual(handlers.LAST_RAIN, None)
-        self.assertEqual(handlers.LAST_RAIN_TOTAL, rain_data)
-        handlers.run(client, "arwn/rain", rain_data2)
-        self.assertEqual(handlers.LAST_RAIN, rain_data2)
-        self.assertEqual(handlers.LAST_RAIN_TOTAL, rain_data)
-
-    def test_updates_rain_total_overmidnight(self):
-        """Test that we initialize LAST_RAIN_TOTAL.
-
-        LAST_RAIN_TOTAL needs to be initialized if it wasn't initially
-        on the first packet into the system if it's never been before.
-
-        This handles the case of a completely new environment where
-        there was no retain message.
-        """
-
-        client = FakeClient()
-
-        rain_data = {"total": 10.0, "timestamp": DAY1}
-        rain_data2 = {"total": 10.7, "timestamp": DAY1H1}
-        rain_data3 = {"total": 11.0, "timestamp": DAY2}
-
-        handlers.run(client, "arwn/totals/rain", rain_data)
-        self.assertEqual(handlers.LAST_RAIN, None)
-        self.assertEqual(handlers.LAST_RAIN_TOTAL, rain_data)
-        self.assertEqual(client.log, [])
-        handlers.run(client, "arwn/rain", rain_data2)
-        self.assertEqual(
-            client.log[-1],
-            ["rain/today", dict(since_midnight=0.7, timestamp=DAY1H1)]
-        )
-        handlers.run(client, "arwn/rain", rain_data3)
-        self.assertEqual(
-            client.log[-1],
-            ["rain/today", dict(since_midnight=0.3, timestamp=DAY2)]
-        )
-        self.assertEqual(handlers.LAST_RAIN, rain_data3)
-        totals = rain_data2.copy()
-        totals.update(timestamp=rain_data3['timestamp'])
-        self.assertEqual(handlers.LAST_RAIN_TOTAL, totals)
-
-    def test_updates_just_after_midnight(self):
-        client = FakeClient()
-
-        rain_data = {"total": 10.0, "timestamp": DAY2}
-        rain_data2 = {"total": 11.0, "timestamp": DAY2_1159}
-        rain_data3 = {"total": 12.0, "timestamp": DAY3_1200}
-        rain_data4 = {"total": 12.0, "timestamp": DAY3_1201}
-        rain_data5 = {"total": 12.004, "timestamp": DAY3_1202}
-
-        handlers.run(client, "arwn/rain", rain_data)
-        self.assertEqual(handlers.LAST_RAIN, rain_data)
-        self.assertEqual(handlers.LAST_RAIN_TOTAL, rain_data)
-        self.assertEqual(len(client.log), 2, client.log)
-        self.assertEqual(
-            client.log[-1],
-            ['rain/today', dict(since_midnight=0.0, timestamp=DAY2)])
-
-        handlers.run(client, "arwn/rain", rain_data2)
-        self.assertEqual(handlers.LAST_RAIN, rain_data2)
-        self.assertEqual(handlers.LAST_RAIN_TOTAL, rain_data)
-        self.assertEqual(len(client.log), 3, client.log)
-        self.assertEqual(
-            client.log[-1],
-            ['rain/today', dict(since_midnight=1.0, timestamp=DAY2_1159)])
-
-        handlers.run(client, "arwn/rain", rain_data3)
-        self.assertEqual(len(client.log), 6, client.log)
-        self.assertEqual(
-            client.log[-1],
-            ["rain/today", dict(since_midnight=1.0, timestamp=DAY3_1200)]
-        )
-        self.assertEqual(handlers.LAST_RAIN, rain_data3)
-        totals = rain_data2.copy()
-        totals.update(timestamp=rain_data3['timestamp'])
-        self.assertEqual(handlers.LAST_RAIN_TOTAL, totals)
-
-        handlers.run(client, "arwn/rain", rain_data4)
-        self.assertEqual(len(client.log), 7, client.log)
-        self.assertEqual(
-            client.log[-1],
-            ["rain/today", dict(since_midnight=1.0, timestamp=DAY3_1201)]
-        )
-        self.assertEqual(handlers.LAST_RAIN, rain_data4)
-        self.assertEqual(handlers.LAST_RAIN_TOTAL, totals)
-
-        handlers.run(client, "arwn/rain", rain_data5)
-        self.assertEqual(
-            client.log[-1],
-            ["rain/today", dict(since_midnight=1.004, timestamp=DAY3_1202)]
-        )
-
-    def test_updates_over_new_years(self):
-        client = FakeClient()
-
-        rain_data = {"total": 10.0, "timestamp": Y1D365}
-        rain_data2 = {"total": 11.0, "timestamp": Y1D365_1}
-        rain_data3 = {"total": 12.0, "timestamp": DAY1}
-        rain_data4 = {"total": 13.0, "timestamp": DAY1H1}
-
-        handlers.run(client, "arwn/rain", rain_data)
-        self.assertEqual(handlers.LAST_RAIN, rain_data)
-        self.assertEqual(handlers.LAST_RAIN_TOTAL, rain_data)
-        self.assertEqual(len(client.log), 2, client.log)
-        self.assertEqual(
-            client.log[-1],
-            ['rain/today', dict(since_midnight=0.0, timestamp=Y1D365)])
-
-        handlers.run(client, "arwn/rain", rain_data2)
-        self.assertEqual(handlers.LAST_RAIN, rain_data2)
-        self.assertEqual(handlers.LAST_RAIN_TOTAL, rain_data)
-        self.assertEqual(len(client.log), 3, client.log)
-        self.assertEqual(
-            client.log[-1],
-            ['rain/today', dict(since_midnight=1.0, timestamp=Y1D365_1)])
-
-        handlers.run(client, "arwn/rain", rain_data3)
-        self.assertEqual(handlers.LAST_RAIN, rain_data3)
-        totals = rain_data2.copy()
-        totals.update(timestamp=rain_data3['timestamp'])
-        self.assertEqual(handlers.LAST_RAIN_TOTAL, totals)
-        self.assertEqual(len(client.log), 6, client.log)
-        self.assertEqual(
-            client.log[-1],
-            ['rain/today', dict(since_midnight=1.0, timestamp=DAY1)])
-
-        handlers.run(client, "arwn/rain", rain_data4)
-        self.assertEqual(handlers.LAST_RAIN, rain_data4)
-        self.assertEqual(handlers.LAST_RAIN_TOTAL, totals)
-        self.assertEqual(len(client.log), 7, client.log)
-        self.assertEqual(
-            client.log[-1],
-            ['rain/today', dict(since_midnight=2.0, timestamp=DAY1H1)])
-
-    # TODO(sdague): test case for what happens when the data on the
-    # rain guage gets reset due to battery replacement. I have one of
-    # these events coming up this year.
+@pytest.fixture(autouse=True)
+def setup_handlers():
+    """Setup handlers before each test."""
+    handlers.setup()
 
 
-if __name__ == '__main__':
-    import sys
-    sys.exit(unittest.main())
+def test_called_for_rain():
+    client = mock.MagicMock()
+
+    rain_data = {"total": 10.0}
+
+    handlers.run(client, "arwn/rain", rain_data)
+    assert handlers.LAST_RAIN == rain_data
+    assert handlers.LAST_RAIN_TOTAL is None
+    # just making sure we call across this boundary
+    client.send.assert_called_once_with("totals/rain", rain_data, retain=True)
+
+
+def test_updates_rain_total():
+    """Test that we initialize LAST_RAIN_TOTAL.
+
+    LAST_RAIN_TOTAL needs to be initialized if it wasn't initially
+    on the first packet into the system if it's never been before.
+
+    This handles the case of a completely new environment where
+    there was no retain message.
+    """
+
+    client = FakeClient()
+
+    rain_data = {"total": 10.0, "timestamp": DAY1}
+    rain_data2 = {"total": 11.0, "timestamp": DAY1H1}
+
+    handlers.run(client, "arwn/rain", rain_data)
+    assert handlers.LAST_RAIN == rain_data
+    assert handlers.LAST_RAIN_TOTAL == rain_data
+    handlers.run(client, "arwn/rain", rain_data2)
+    assert handlers.LAST_RAIN == rain_data2
+    assert handlers.LAST_RAIN_TOTAL == rain_data
+
+
+def test_updates_rain_total_retain():
+    """Test that we initialize LAST_RAIN_TOTAL.
+
+    LAST_RAIN_TOTAL needs to be initialized if it wasn't initially
+    on the first packet into the system if it's never been before.
+
+    This handles the case of a completely new environment where
+    there was no retain message.
+    """
+
+    client = FakeClient()
+
+    rain_data = {"total": 10.0, "timestamp": DAY1}
+    rain_data2 = {"total": 11.0, "timestamp": DAY1H1}
+
+    handlers.run(client, "arwn/totals/rain", rain_data)
+    assert handlers.LAST_RAIN is None
+    assert handlers.LAST_RAIN_TOTAL == rain_data
+    handlers.run(client, "arwn/rain", rain_data2)
+    assert handlers.LAST_RAIN == rain_data2
+    assert handlers.LAST_RAIN_TOTAL == rain_data
+
+
+def test_updates_rain_total_overmidnight():
+    """Test that we initialize LAST_RAIN_TOTAL.
+
+    LAST_RAIN_TOTAL needs to be initialized if it wasn't initially
+    on the first packet into the system if it's never been before.
+
+    This handles the case of a completely new environment where
+    there was no retain message.
+    """
+
+    client = FakeClient()
+
+    rain_data = {"total": 10.0, "timestamp": DAY1}
+    rain_data2 = {"total": 10.7, "timestamp": DAY1H1}
+    rain_data3 = {"total": 11.0, "timestamp": DAY2}
+
+    handlers.run(client, "arwn/totals/rain", rain_data)
+    assert handlers.LAST_RAIN is None
+    assert handlers.LAST_RAIN_TOTAL == rain_data
+    assert client.log == []
+    handlers.run(client, "arwn/rain", rain_data2)
+    assert client.log[-1] == [
+        "rain/today",
+        dict(since_midnight=0.7, timestamp=DAY1H1),
+    ]
+    handlers.run(client, "arwn/rain", rain_data3)
+    assert client.log[-1] == [
+        "rain/today",
+        dict(since_midnight=0.3, timestamp=DAY2),
+    ]
+    assert handlers.LAST_RAIN == rain_data3
+    totals = rain_data2.copy()
+    totals.update(timestamp=rain_data3["timestamp"])
+    assert handlers.LAST_RAIN_TOTAL == totals
+
+
+def test_updates_just_after_midnight():
+    client = FakeClient()
+
+    rain_data = {"total": 10.0, "timestamp": DAY2}
+    rain_data2 = {"total": 11.0, "timestamp": DAY2_1159}
+    rain_data3 = {"total": 12.0, "timestamp": DAY3_1200}
+    rain_data4 = {"total": 12.0, "timestamp": DAY3_1201}
+    rain_data5 = {"total": 12.004, "timestamp": DAY3_1202}
+
+    handlers.run(client, "arwn/rain", rain_data)
+    assert handlers.LAST_RAIN == rain_data
+    assert handlers.LAST_RAIN_TOTAL == rain_data
+    assert len(client.log) == 2, client.log
+    assert client.log[-1] == [
+        "rain/today",
+        dict(since_midnight=0.0, timestamp=DAY2),
+    ]
+
+    handlers.run(client, "arwn/rain", rain_data2)
+    assert handlers.LAST_RAIN == rain_data2
+    assert handlers.LAST_RAIN_TOTAL == rain_data
+    assert len(client.log) == 3, client.log
+    assert client.log[-1] == [
+        "rain/today",
+        dict(since_midnight=1.0, timestamp=DAY2_1159),
+    ]
+
+    handlers.run(client, "arwn/rain", rain_data3)
+    assert len(client.log) == 6, client.log
+    assert client.log[-1] == [
+        "rain/today",
+        dict(since_midnight=1.0, timestamp=DAY3_1200),
+    ]
+    assert handlers.LAST_RAIN == rain_data3
+    totals = rain_data2.copy()
+    totals.update(timestamp=rain_data3["timestamp"])
+    assert handlers.LAST_RAIN_TOTAL == totals
+
+    handlers.run(client, "arwn/rain", rain_data4)
+    assert len(client.log) == 7, client.log
+    assert client.log[-1] == [
+        "rain/today",
+        dict(since_midnight=1.0, timestamp=DAY3_1201),
+    ]
+    assert handlers.LAST_RAIN == rain_data4
+    assert handlers.LAST_RAIN_TOTAL == totals
+
+    handlers.run(client, "arwn/rain", rain_data5)
+    assert client.log[-1] == [
+        "rain/today",
+        dict(since_midnight=1.004, timestamp=DAY3_1202),
+    ]
+
+
+def test_updates_over_new_years():
+    client = FakeClient()
+
+    rain_data = {"total": 10.0, "timestamp": Y1D365}
+    rain_data2 = {"total": 11.0, "timestamp": Y1D365_1}
+    rain_data3 = {"total": 12.0, "timestamp": DAY1}
+    rain_data4 = {"total": 13.0, "timestamp": DAY1H1}
+
+    handlers.run(client, "arwn/rain", rain_data)
+    assert handlers.LAST_RAIN == rain_data
+    assert handlers.LAST_RAIN_TOTAL == rain_data
+    assert len(client.log) == 2, client.log
+    assert client.log[-1] == [
+        "rain/today",
+        dict(since_midnight=0.0, timestamp=Y1D365),
+    ]
+
+    handlers.run(client, "arwn/rain", rain_data2)
+    assert handlers.LAST_RAIN == rain_data2
+    assert handlers.LAST_RAIN_TOTAL == rain_data
+    assert len(client.log) == 3, client.log
+    assert client.log[-1] == [
+        "rain/today",
+        dict(since_midnight=1.0, timestamp=Y1D365_1),
+    ]
+
+    handlers.run(client, "arwn/rain", rain_data3)
+    assert handlers.LAST_RAIN == rain_data3
+    totals = rain_data2.copy()
+    totals.update(timestamp=rain_data3["timestamp"])
+    assert handlers.LAST_RAIN_TOTAL == totals
+    assert len(client.log) == 6, client.log
+    assert client.log[-1] == ["rain/today", dict(since_midnight=1.0, timestamp=DAY1)]
+
+    handlers.run(client, "arwn/rain", rain_data4)
+    assert handlers.LAST_RAIN == rain_data4
+    assert handlers.LAST_RAIN_TOTAL == totals
+    assert len(client.log) == 7, client.log
+    assert client.log[-1] == [
+        "rain/today",
+        dict(since_midnight=2.0, timestamp=DAY1H1),
+    ]
+
+
+# TODO(sdague): test case for what happens when the data on the
+# rain guage gets reset due to battery replacement. I have one of
+# these events coming up this year.
