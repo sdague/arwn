@@ -15,12 +15,12 @@
 # under the License.
 
 import argparse
-import daemon
 import logging
-import pid
 import os
 import sys
 
+import daemon
+import pid
 import yaml
 
 from arwn import engine

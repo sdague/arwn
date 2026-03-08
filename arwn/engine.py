@@ -19,8 +19,7 @@ import time
 
 import paho.mqtt.client as paho
 
-from arwn import temperature
-from arwn import handlers
+from arwn import handlers, temperature
 from arwn.vendor.RFXtrx import lowlevel as ll
 from arwn.vendor.RFXtrx.pyserial import PySerialTransport
 
