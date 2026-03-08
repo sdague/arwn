@@ -27,27 +27,24 @@ from arwn import engine
 
 
 def parse_args():
-    parser = argparse.ArgumentParser('arwn')
-    parser.add_argument('-f', '--foreground',
-                        help="run in foreground (don't daemonize)",
-                        action='store_true', default=False)
-    parser.add_argument('-c', '--config',
-                        help="config file name",
-                        default='config.yml')
-    parser.add_argument('-l', '--logfile',
-                        help="log file name",
-                        default='arwn.log')
-    parser.add_argument('-p', '--piddir',
-                        help="pid file name",
-                        default=os.getcwd())
+    parser = argparse.ArgumentParser("arwn")
+    parser.add_argument(
+        "-f",
+        "--foreground",
+        help="run in foreground (don't daemonize)",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument("-c", "--config", help="config file name", default="config.yml")
+    parser.add_argument("-l", "--logfile", help="log file name", default="arwn.log")
+    parser.add_argument("-p", "--piddir", help="pid file name", default=os.getcwd())
     return parser.parse_args()
 
 
 def setup_logger(logfile=None):
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
-    formatter = logging.Formatter("[%(levelname)s] %(name)s: "
-                                  "%(message)s")
+    formatter = logging.Formatter("[%(levelname)s] %(name)s: " "%(message)s")
     if logfile is not None:
         fh = logging.FileHandler(logfile)
     else:
@@ -64,13 +61,14 @@ def event_loop(config):
 
 def main():
     args = parse_args()
-    config = yaml.safe_load(open(args.config, 'r').read())
+    config = yaml.safe_load(open(args.config, "r").read())
     if not args.foreground:
-        fh, logger = setup_logger(config.get('logfile', args.logfile))
+        fh, logger = setup_logger(config.get("logfile", args.logfile))
         try:
             with daemon.DaemonContext(
-                    files_preserve=[fh.stream, sys.stdout],
-                    pidfile=pid.PidFile('arwn', args.piddir)):
+                files_preserve=[fh.stream, sys.stdout],
+                pidfile=pid.PidFile("arwn", args.piddir),
+            ):
                 logger.debug("Starting arwn in daemon mode")
                 event_loop(config)
         except Exception:

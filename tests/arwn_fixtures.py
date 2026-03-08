@@ -1,5 +1,3 @@
-
-
 import os.path
 import subprocess
 import time
@@ -12,9 +10,9 @@ class CaptureStdout(fixtures.Fixture):
 
     def setUp(self):
         super(CaptureStdout, self).setUp()
-        self.stdout = fixtures.StringStream('stdout')
+        self.stdout = fixtures.StringStream("stdout")
         self.useFixture(self.stdout)
-        self.useFixture(fixtures.MonkeyPatch('sys.stdout', self.stdout.stream))
+        self.useFixture(fixtures.MonkeyPatch("sys.stdout", self.stdout.stream))
 
     def __str__(self):
         return self.stdout._details["stdout"].as_text()
@@ -26,7 +24,7 @@ class SampleConfig(fixtures.Fixture):
         super(SampleConfig, self).setUp()
         tmpdir = self.useFixture(fixtures.TempDir()).path
         self._path = os.path.join(tmpdir, "config.yml")
-        with open(self._path, 'w') as f:
+        with open(self._path, "w") as f:
             f.write("""device: /dev/ttyUSB0
 logfile: test.log
 mqtt:
@@ -63,8 +61,9 @@ class MosquittoReal(fixtures.Fixture):
 
     def _pick_port(self):
         import socket
+
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.bind(('localhost', 0))
+        s.bind(("localhost", 0))
         addr, self.port = s.getsockname()
         s.close()
 
@@ -73,14 +72,14 @@ class MosquittoReal(fixtures.Fixture):
         tmpdir = self.useFixture(fixtures.TempDir()).path
         self._pick_port()
         config = os.path.join(tmpdir, "mqtt.conf")
-        with open(config, 'w') as f:
+        with open(config, "w") as f:
             f.write("""
 pid_file %(tmpdir)s/mosquitto.pid
 persistence true
 persistence_location %(tmpdir)s
 log_dest file %(tmpdir)s/mosquitto.log
 listener %(port)d
-""" % {'tmpdir': tmpdir, 'port': self.port})
+""" % {"tmpdir": tmpdir, "port": self.port})
 
         try:
             self.mqtt = subprocess.Popen(["mosquitto", "-c", config])

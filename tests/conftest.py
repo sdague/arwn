@@ -12,8 +12,7 @@ import pytest
 def sample_config(tmp_path):
     """Create a sample configuration file for testing."""
     config_path = tmp_path / "config.yml"
-    config_path.write_text(
-        """device: /dev/ttyUSB0
+    config_path.write_text("""device: /dev/ttyUSB0
 logfile: test.log
 mqtt:
   server: 10.42.0.3
@@ -30,8 +29,7 @@ names:
   "8e:01": "Cold Frame"
   "55:09": "Bed Room"
   "e9:04": "Garage"
-"""
-    )
+""")
     return str(config_path)
 
 
@@ -68,15 +66,13 @@ def mosquitto_real(tmp_path):
 
     # Create mosquitto config
     config_path = tmp_path / "mqtt.conf"
-    config_path.write_text(
-        f"""
+    config_path.write_text(f"""
 pid_file {tmp_path}/mosquitto.pid
 persistence true
 persistence_location {tmp_path}
 log_dest file {tmp_path}/mosquitto.log
 listener {port}
-"""
-    )
+""")
 
     # Start mosquitto
     try:

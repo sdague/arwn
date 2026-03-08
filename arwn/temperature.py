@@ -15,7 +15,7 @@
 import math
 import re
 
-regex = r'(-?\d+(\.\d+)?)(F|C|K)'
+regex = r"(-?\d+(\.\d+)?)(F|C|K)"
 
 # The scale factor between C and F
 CScale = 1.8
@@ -60,7 +60,7 @@ class Temperature(object):
             if self.is_F():
                 return (self.temp - FOffset) / CScale
             elif self.is_K():
-                return (self.temp + KOffset)
+                return self.temp + KOffset
         elif unit == "F":
             if self.is_C():
                 return (self.temp * CScale) + FOffset
@@ -70,7 +70,7 @@ class Temperature(object):
             if self.is_F():
                 return ((self.temp - FOffset) / CScale) + KOffset
             elif self.is_C():
-                return (self.temp - KOffset)
+                return self.temp - KOffset
 
         return self.temp
 
@@ -99,6 +99,7 @@ class Temperature(object):
     def dewpoint(self, humid):
         def _gamma(t, humid):
             return (a * t / (b + t)) + math.log(humid / 100.0)
+
         t = self.as_C()
         T = t.temp
         t.temp = (b * _gamma(T, humid)) / (a - _gamma(T, humid))
