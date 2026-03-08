@@ -37,7 +37,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
 
     steps:
       - uses: actions/checkout@v4
@@ -58,7 +58,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
-        if: matrix.python-version == '3.11'
+        if: matrix.python-version == '3.13'
         with:
           file: ./coverage.xml
           fail_ci_if_error: false
@@ -114,5 +114,3 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-
-# Made with Bob
