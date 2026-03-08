@@ -7,8 +7,7 @@
 # Core dev dependencies
 pytest>=7.0
 pytest-cov>=4.0
-fixtures
-mock
+pytest-mock>=3.0
 
 # Code quality tools
 black>=23.0
