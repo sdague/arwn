@@ -10,9 +10,9 @@ Tests for `arwn` module.
 
 import datetime
 import time
+from unittest import mock
 
 import pytest
-from unittest import mock
 
 from arwn import engine  # noqa
 from arwn import handlers  # noqa

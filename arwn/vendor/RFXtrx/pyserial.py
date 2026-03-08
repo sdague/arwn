@@ -22,9 +22,10 @@ This module provides a transport for PySerial
 """
 
 import logging
+from time import sleep
 
 from serial import Serial
-from time import sleep
+
 from . import RFXtrxTransport
 
 logger = logging.getLogger(__name__)
