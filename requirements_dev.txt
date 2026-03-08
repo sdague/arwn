@@ -11,7 +11,6 @@ fixtures
 mock
 
 # Code quality tools
-flake8>=6.0
 black>=23.0
 isort>=5.0
 mypy>=1.0

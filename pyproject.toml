@@ -38,7 +38,6 @@ dev = [
     "pytest-cov>=4.0",
     "fixtures",
     "mock",
-    "flake8>=6.0",
     "black>=23.0",
     "isort>=5.0",
     "mypy>=1.0",
