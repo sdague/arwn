@@ -52,7 +52,7 @@ class TestMqttSpawn(testtools.TestCase):
             time.sleep(0.1)
             client.loop_read()
         self.assertTrue(self.connected, "Did not seem to connect")
-        self.assertEqual("foo", self.received.payload.decode(encoding='UTF-8'))
+        self.assertEqual("foo", self.received.payload.decode(encoding="UTF-8"))
         self.assertEqual("foo/start", self.received.topic)
 
 
@@ -67,15 +67,15 @@ class TestMQTTLifecycle(testtools.TestCase):
             self.skipTest("Can't start mosquitto")
 
         config = dict(mqtt={})
-        mq = arwn.engine.MQTT('localhost', config, port=mos.port)
+        mq = arwn.engine.MQTT("localhost", config, port=mos.port)
 
         def on_connect(client, userdata, flags, rc):
             client.subscribe("%s/#" % mq.root, qos=2)
 
         def on_message(client, userdata, message):
             self.received.append(
-                {message.topic:
-                 json.loads(message.payload.decode(encoding='UTF-8'))})
+                {message.topic: json.loads(message.payload.decode(encoding="UTF-8"))}
+            )
             print("Got a message!")
 
         client = mqtt.Client()
@@ -95,21 +95,15 @@ class TestMQTTLifecycle(testtools.TestCase):
         self.assertEqual(3, len(self.received), self.received)
 
         self.assertEqual(
-            self.received[0]["%s/status" % mq.root]['status'],
-            'alive',
-            self.received[0]
+            self.received[0]["%s/status" % mq.root]["status"], "alive", self.received[0]
         )
         self.assertEqual(
-            self.received[1]["%s/status" % mq.root]['status'],
-            'dead',
-            self.received[1]
+            self.received[1]["%s/status" % mq.root]["status"], "dead", self.received[1]
         )
         self.assertEqual(
-            self.received[2]["%s/status" % mq.root]['status'],
-            'alive',
-            self.received[2]
+            self.received[2]["%s/status" % mq.root]["status"], "alive", self.received[2]
         )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(unittest.main())

@@ -21,6 +21,7 @@
 This module provides low level packet parsing and generation code for the
 RFXtrx.
 """
+
 # pylint: disable=C0302,R0902,R0903,R0911,R0913
 
 import logging
@@ -29,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 def parse(data):
-    """ Parse a packet from a bytearray """
+    """Parse a packet from a bytearray"""
     if data[1] == 0x10:
         pkt = Lighting1()
         pkt.load_receive(data)
@@ -86,8 +87,9 @@ def parse(data):
 # Packet class
 ###############################################################################
 
+
 class Packet(object):
-    """ Abstract superclass for all low level packets """
+    """Abstract superclass for all low level packets"""
 
     _UNKNOWN_TYPE = "Unknown type ({0:#04x}/{1:#04x})"
     _UNKNOWN_CMND = "Unknown command ({0:#04x})"
@@ -109,62 +111,82 @@ class Packet(object):
 # Lighting1 class
 ###############################################################################
 
+
 class Lighting1(Packet):
     """
     Data class for the Lighting1 packet type
     """
 
-    TYPES = {0x00: 'X10 lighting',
-             0x01: 'ARC',
-             0x02: 'ELRO AB400D',
-             0x03: 'Waveman',
-             0x04: 'Chacon EMW200',
-             0x05: 'IMPULS',
-             0x06: 'RisingSun',
-             0x07: 'Philips SBC',
-             }
+    TYPES = {
+        0x00: "X10 lighting",
+        0x01: "ARC",
+        0x02: "ELRO AB400D",
+        0x03: "Waveman",
+        0x04: "Chacon EMW200",
+        0x05: "IMPULS",
+        0x06: "RisingSun",
+        0x07: "Philips SBC",
+    }
     """
     Mapping of numeric subtype values to strings, used in type_string
     """
 
-    ALIAS_TYPES = {'KlikAanKlikUit code wheel': 0x01,
-                   'NEXA code wheel': 0x01,
-                   'CHACON code wheel': 0x01,
-                   'HomeEasy code wheel': 0x01,
-                   'Proove': 0x01,
-                   'DomiaLite': 0x01,
-                   'InterTechno': 0x01,
-                   'AB600': 0x01,
-                   }
+    ALIAS_TYPES = {
+        "KlikAanKlikUit code wheel": 0x01,
+        "NEXA code wheel": 0x01,
+        "CHACON code wheel": 0x01,
+        "HomeEasy code wheel": 0x01,
+        "Proove": 0x01,
+        "DomiaLite": 0x01,
+        "InterTechno": 0x01,
+        "AB600": 0x01,
+    }
     """
     Mapping of subtype aliases to the corresponding subtype value
     """
 
-    HOUSECODES = {0x41: 'A', 0x42: 'B', 0x43: 'C', 0x44: 'D',
-                  0x45: 'E', 0x46: 'F', 0x47: 'G', 0x48: 'H',
-                  0x49: 'I', 0x4A: 'J', 0x4B: 'K', 0x4C: 'L',
-                  0x4D: 'M', 0x4E: 'N', 0x4F: 'O', 0x50: 'P'}
+    HOUSECODES = {
+        0x41: "A",
+        0x42: "B",
+        0x43: "C",
+        0x44: "D",
+        0x45: "E",
+        0x46: "F",
+        0x47: "G",
+        0x48: "H",
+        0x49: "I",
+        0x4A: "J",
+        0x4B: "K",
+        0x4C: "L",
+        0x4D: "M",
+        0x4E: "N",
+        0x4F: "O",
+        0x50: "P",
+    }
     """
     Mapping of housecode numeric values to strings, used in id_string
     """
 
-    COMMANDS = {0x00: 'Off',
-                0x01: 'On',
-                0x02: 'Dim',
-                0x03: 'Bright',
-                0x05: 'All/group Off',
-                0x06: 'All/group On',
-                0x07: 'Chime',
-                0xFF: 'Illegal command'}
+    COMMANDS = {
+        0x00: "Off",
+        0x01: "On",
+        0x02: "Dim",
+        0x03: "Bright",
+        0x05: "All/group Off",
+        0x06: "All/group On",
+        0x07: "Chime",
+        0xFF: "Illegal command",
+    }
     """
     Mapping of command numeric values to strings, used for cmnd_string
     """
 
     def __str__(self):
-        return ("Lighting1 [subtype={0}, seqnbr={1}, id={2}, cmnd={3}, " +
-                "rssi={4}]") \
-            .format(self.type_string, self.seqnbr, self.id_string,
-                    self.cmnd_string, self.rssi)
+        return (
+            "Lighting1 [subtype={0}, seqnbr={1}, id={2}, cmnd={3}, " + "rssi={4}]"
+        ).format(
+            self.type_string, self.seqnbr, self.id_string, self.cmnd_string, self.rssi
+        )
 
     def __init__(self):
         """Constructor"""
@@ -215,9 +237,18 @@ class Lighting1(Packet):
         self.cmnd = cmnd
         self.rssi_byte = 0
         self.rssi = 0
-        self.data = bytearray([self.packetlength, self.packettype,
-                               self.subtype, self.seqnbr, self.housecode,
-                               self.unitcode, self.cmnd, self.rssi_byte])
+        self.data = bytearray(
+            [
+                self.packetlength,
+                self.packettype,
+                self.subtype,
+                self.seqnbr,
+                self.housecode,
+                self.unitcode,
+                self.cmnd,
+                self.rssi_byte,
+            ]
+        )
         self._set_strings()
 
     def _set_strings(self):
@@ -226,9 +257,8 @@ class Lighting1(Packet):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
-            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
-                                                         self.subtype)
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype, self.subtype)
         if self.cmnd is not None:
             if self.cmnd in self.COMMANDS:
                 self.cmnd_string = self.COMMANDS[self.cmnd]
@@ -240,44 +270,55 @@ class Lighting1(Packet):
 # Lighting2 class
 ###############################################################################
 
+
 class Lighting2(Packet):
     """
     Data class for the Lighting2 packet type
     """
 
-    TYPES = {0x00: 'AC',
-             0x01: 'HomeEasy EU',
-             0x02: 'ANSLUT',
-             }
+    TYPES = {
+        0x00: "AC",
+        0x01: "HomeEasy EU",
+        0x02: "ANSLUT",
+    }
     """
     Mapping of numeric subtype values to strings, used in type_string
     """
 
-    ALIAS_TYPES = {'KlikAanKlikUit automatic': 0x00,
-                   'NEXA automatic': 0x00,
-                   'CHACON autometic': 0x00,
-                   'HomeEasy UK': 0x00,
-                   }
+    ALIAS_TYPES = {
+        "KlikAanKlikUit automatic": 0x00,
+        "NEXA automatic": 0x00,
+        "CHACON autometic": 0x00,
+        "HomeEasy UK": 0x00,
+    }
     """
     Mapping of subtype aliases to the corresponding subtype value
     """
 
-    COMMANDS = {0x00: 'Off',
-                0x01: 'On',
-                0x02: 'Set level',
-                0x03: 'Group off',
-                0x04: 'Group on',
-                0x05: 'Set group level',
-                }
+    COMMANDS = {
+        0x00: "Off",
+        0x01: "On",
+        0x02: "Set level",
+        0x03: "Group off",
+        0x04: "Group on",
+        0x05: "Set group level",
+    }
     """
     Mapping of command numeric values to strings, used for cmnd_string
     """
 
     def __str__(self):
-        return ("Lighting2 [subtype={0}, seqnbr={1}, id={2}, cmnd={3}, " +
-                "level={4}, rssi={5}]") \
-            .format(self.type_string, self.seqnbr, self.id_string,
-                    self.cmnd_string, self.level, self.rssi)
+        return (
+            "Lighting2 [subtype={0}, seqnbr={1}, id={2}, cmnd={3}, "
+            + "level={4}, rssi={5}]"
+        ).format(
+            self.type_string,
+            self.seqnbr,
+            self.id_string,
+            self.cmnd_string,
+            self.level,
+            self.rssi,
+        )
 
     def __init__(self):
         """Constructor"""
@@ -299,9 +340,9 @@ class Lighting2(Packet):
             self.subtype = subtype
             self.id_combined = int(id_string[:7], 16)
             self.id1 = self.id_combined >> 24
-            self.id2 = self.id_combined >> 16 & 0xff
-            self.id3 = self.id_combined >> 8 & 0xff
-            self.id4 = self.id_combined & 0xff
+            self.id2 = self.id_combined >> 16 & 0xFF
+            self.id3 = self.id_combined >> 8 & 0xFF
+            self.id4 = self.id_combined & 0xFF
             self.unitcode = int(id_string[8:])
             self._set_strings()
         except:
@@ -320,8 +361,9 @@ class Lighting2(Packet):
         self.id2 = data[5]
         self.id3 = data[6]
         self.id4 = data[7]
-        self.id_combined = (self.id1 << 24) + (self.id2 << 16) \
-            + (self.id3 << 8) + self.id4
+        self.id_combined = (
+            (self.id1 << 24) + (self.id2 << 16) + (self.id3 << 8) + self.id4
+        )
         self.unitcode = data[8]
         self.cmnd = data[9]
         self.level = data[10]
@@ -329,27 +371,38 @@ class Lighting2(Packet):
         self.rssi = self.rssi_byte >> 4
         self._set_strings()
 
-    def set_transmit(self, subtype, seqnbr, id_combined, unitcode, cmnd,
-                     level):
+    def set_transmit(self, subtype, seqnbr, id_combined, unitcode, cmnd, level):
         """Load data from individual data fields"""
-        self.packetlength = 0x0b
+        self.packetlength = 0x0B
         self.packettype = 0x11
         self.subtype = subtype
         self.seqnbr = seqnbr
         self.id_combined = id_combined
         self.id1 = id_combined >> 24
-        self.id2 = id_combined >> 16 & 0xff
-        self.id3 = id_combined >> 8 & 0xff
-        self.id4 = id_combined & 0xff
+        self.id2 = id_combined >> 16 & 0xFF
+        self.id3 = id_combined >> 8 & 0xFF
+        self.id4 = id_combined & 0xFF
         self.unitcode = unitcode
         self.cmnd = cmnd
         self.level = level
         self.rssi_byte = 0
         self.rssi = 0
-        self.data = bytearray([self.packetlength, self.packettype,
-                               self.subtype, self.seqnbr, self.id1, self.id2,
-                               self.id3, self.id4, self.unitcode, self.cmnd,
-                               self.level, self.rssi_byte])
+        self.data = bytearray(
+            [
+                self.packetlength,
+                self.packettype,
+                self.subtype,
+                self.seqnbr,
+                self.id1,
+                self.id2,
+                self.id3,
+                self.id4,
+                self.unitcode,
+                self.cmnd,
+                self.level,
+                self.rssi_byte,
+            ]
+        )
         self._set_strings()
 
     def _set_strings(self):
@@ -358,9 +411,8 @@ class Lighting2(Packet):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
-            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
-                                                         self.subtype)
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype, self.subtype)
         if self.cmnd is not None:
             if self.cmnd in self.COMMANDS:
                 self.cmnd_string = self.COMMANDS[self.cmnd]
@@ -372,41 +424,51 @@ class Lighting2(Packet):
 # Lighting3 class
 ###############################################################################
 
+
 class Lighting3(Packet):
     """
     Data class for the Lighting3 packet type
     """
 
-    TYPES = {0x00: 'Ikea Koppla',
-             }
+    TYPES = {
+        0x00: "Ikea Koppla",
+    }
     """
     Mapping of numeric subtype values to strings, used in type_string
     """
 
-    COMMANDS = {0x00: 'Bright',
-                0x08: 'Dim',
-                0x10: 'On',
-                0x11: 'Level 1',
-                0x12: 'Level 2',
-                0x13: 'Level 3',
-                0x14: 'Level 4',
-                0x15: 'Level 5',
-                0x16: 'Level 6',
-                0x17: 'Level 7',
-                0x18: 'Level 8',
-                0x19: 'Level 9',
-                0x1a: 'Off',
-                0x1c: 'Program',
-                }
+    COMMANDS = {
+        0x00: "Bright",
+        0x08: "Dim",
+        0x10: "On",
+        0x11: "Level 1",
+        0x12: "Level 2",
+        0x13: "Level 3",
+        0x14: "Level 4",
+        0x15: "Level 5",
+        0x16: "Level 6",
+        0x17: "Level 7",
+        0x18: "Level 8",
+        0x19: "Level 9",
+        0x1A: "Off",
+        0x1C: "Program",
+    }
     """
     Mapping of command numeric values to strings, used for cmnd_string
     """
 
     def __str__(self):
-        return ("Lighting3 [subtype={0}, seqnbr={1}, id={2}, cmnd={3}, " +
-                "battery={4}, rssi={5}]") \
-            .format(self.type_string, self.seqnbr, self.id_string,
-                    self.cmnd_string, self.battery, self.rssi)
+        return (
+            "Lighting3 [subtype={0}, seqnbr={1}, id={2}, cmnd={3}, "
+            + "battery={4}, rssi={5}]"
+        ).format(
+            self.type_string,
+            self.seqnbr,
+            self.id_string,
+            self.cmnd_string,
+            self.battery,
+            self.rssi,
+        )
 
     def __init__(self):
         """Constructor"""
@@ -426,7 +488,7 @@ class Lighting3(Packet):
             self.subtype = subtype
             self.system = int(id_string[:1], 16)
             self.channel = int(id_string[2:], 16)
-            self.channel1 = self.channel & 0xff
+            self.channel1 = self.channel & 0xFF
             self.channel2 = self.channel >> 8
             self._set_strings()
         except:
@@ -447,7 +509,7 @@ class Lighting3(Packet):
         self.channel = (self.channel2 << 8) + self.channel1
         self.cmnd = data[7]
         self.rssi_byte = data[8]
-        self.battery = self.rssi_byte & 0x0f
+        self.battery = self.rssi_byte & 0x0F
         self.rssi = self.rssi_byte >> 4
         self._set_strings()
 
@@ -459,16 +521,25 @@ class Lighting3(Packet):
         self.seqnbr = seqnbr
         self.system = system
         self.channel = channel
-        self.channel1 = channel & 0xff
+        self.channel1 = channel & 0xFF
         self.channel2 = channel >> 8
         self.cmnd = cmnd
         self.rssi_byte = 0
         self.battery = 0
         self.rssi = 0
-        self.data = bytearray([self.packetlength, self.packettype,
-                               self.subtype, self.seqnbr, self.system,
-                               self.channel1, self.channel2, self.cmnd,
-                               self.rssi_byte])
+        self.data = bytearray(
+            [
+                self.packetlength,
+                self.packettype,
+                self.subtype,
+                self.seqnbr,
+                self.system,
+                self.channel1,
+                self.channel2,
+                self.cmnd,
+                self.rssi_byte,
+            ]
+        )
         self._set_strings()
 
     def _set_strings(self):
@@ -477,9 +548,8 @@ class Lighting3(Packet):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
-            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
-                                                         self.subtype)
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype, self.subtype)
         if self.cmnd is not None:
             if self.cmnd in self.COMMANDS:
                 self.cmnd_string = self.COMMANDS[self.cmnd]
@@ -491,22 +561,23 @@ class Lighting3(Packet):
 # Lighting4 class
 ###############################################################################
 
+
 class Lighting4(Packet):
     """
     Data class for the Lighting4 packet type
     """
 
-    TYPES = {0x00: 'PT2262',
-             }
+    TYPES = {
+        0x00: "PT2262",
+    }
     """
     Mapping of numeric subtype values to strings, used in type_string
     """
 
     def __str__(self):
-        return ("Lighting4 [subtype={0}, seqnbr={1}, cmd={2}, pulse={3}, " +
-                "rssi={4}]") \
-            .format(self.type_string, self.seqnbr, self.id_string,
-                    self.pulse, self.rssi)
+        return (
+            "Lighting4 [subtype={0}, seqnbr={1}, cmd={2}, pulse={3}, " + "rssi={4}]"
+        ).format(self.type_string, self.seqnbr, self.id_string, self.pulse, self.rssi)
 
     def __init__(self):
         """Constructor"""
@@ -526,8 +597,8 @@ class Lighting4(Packet):
             self.subtype = subtype
             self.cmd = int(id_string, 16)
             self.cmd1 = self.cmd >> 16
-            self.cmd2 = (self.cmd >> 8) & 0xff
-            self.cmd3 = self.cmd & 0xff
+            self.cmd2 = (self.cmd >> 8) & 0xFF
+            self.cmd3 = self.cmd & 0xFF
             self._set_strings()
         except:
             raise ValueError("Invalid id_string")
@@ -560,17 +631,27 @@ class Lighting4(Packet):
         self.seqnbr = seqnbr
         self.cmd = cmd
         self.cmd1 = self.cmd >> 16
-        self.cmd2 = (self.cmd >> 8) & 0xff
-        self.cmd3 = self.cmd & 0xff
+        self.cmd2 = (self.cmd >> 8) & 0xFF
+        self.cmd3 = self.cmd & 0xFF
         self.pulse = pulse
         self.pulsehigh = self.pulse >> 8
-        self.pulselow = self.pulse & 0xff
+        self.pulselow = self.pulse & 0xFF
         self.rssi_byte = 0
         self.rssi = 0
-        self.data = bytearray([self.packetlength, self.packettype,
-                               self.subtype, self.seqnbr,
-                               self.cmd1, self.cmd2, self.cmd3,
-                               self.pulsehigh, self.pulselow, self.rssi_byte])
+        self.data = bytearray(
+            [
+                self.packetlength,
+                self.packettype,
+                self.subtype,
+                self.seqnbr,
+                self.cmd1,
+                self.cmd2,
+                self.cmd3,
+                self.pulsehigh,
+                self.pulselow,
+                self.rssi_byte,
+            ]
+        )
         self._set_strings()
 
     def _set_strings(self):
@@ -579,86 +660,99 @@ class Lighting4(Packet):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
-            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
-                                                         self.subtype)
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype, self.subtype)
 
 
 ###############################################################################
 # Lighting5 class
 ###############################################################################
 
+
 class Lighting5(Packet):
     """
     Data class for the Lighting5 packet type
     """
 
-    TYPES = {0x00: 'LightwaveRF, Siemens',
-             0x01: 'EMW100 GAO/Everflourish',
-             0x02: 'BBSB new types',
-             }
+    TYPES = {
+        0x00: "LightwaveRF, Siemens",
+        0x01: "EMW100 GAO/Everflourish",
+        0x02: "BBSB new types",
+    }
     """
     Mapping of numeric subtype values to strings, used in type_string
     """
 
-    ALIAS_TYPES = {'LightwaveRF': 0x00,
-                   'Siemens': 0x00,
-                   'EMW100 GAO': 0x01,
-                   'Everflourish': 0x01,
-                   }
+    ALIAS_TYPES = {
+        "LightwaveRF": 0x00,
+        "Siemens": 0x00,
+        "EMW100 GAO": 0x01,
+        "Everflourish": 0x01,
+    }
     """
     Mapping of subtype aliases to the corresponding subtype value
     """
 
-    COMMANDS_00 = {0x00: 'Off',
-                   0x01: 'On',
-                   0x02: 'Group off',
-                   0x03: 'Mood1',
-                   0x04: 'Mood2',
-                   0x05: 'Mood3',
-                   0x06: 'Mood4',
-                   0x07: 'Mood5',
-                   0x0a: 'Unlock',
-                   0x0b: 'Lock',
-                   0x0c: 'All lock',
-                   0x0d: 'Close (inline relay)',
-                   0x0e: 'Stop (inline relay)',
-                   0x0f: 'Open (inline relay)',
-                   0x10: 'Set level',
-                   }
+    COMMANDS_00 = {
+        0x00: "Off",
+        0x01: "On",
+        0x02: "Group off",
+        0x03: "Mood1",
+        0x04: "Mood2",
+        0x05: "Mood3",
+        0x06: "Mood4",
+        0x07: "Mood5",
+        0x0A: "Unlock",
+        0x0B: "Lock",
+        0x0C: "All lock",
+        0x0D: "Close (inline relay)",
+        0x0E: "Stop (inline relay)",
+        0x0F: "Open (inline relay)",
+        0x10: "Set level",
+    }
     """
     Mapping of command numeric values to strings, used for cmnd_string
     """
 
-    COMMANDS_01 = {0x00: 'Off',
-                   0x01: 'On',
-                   0x02: 'Learn',
-                   }
+    COMMANDS_01 = {
+        0x00: "Off",
+        0x01: "On",
+        0x02: "Learn",
+    }
     """
     Mapping of command numeric values to strings, used for cmnd_string
     """
 
-    COMMANDS_02 = {0x00: 'Off',
-                   0x01: 'On',
-                   0x02: 'Group off',
-                   0x03: 'Group on',
-                   }
+    COMMANDS_02 = {
+        0x00: "Off",
+        0x01: "On",
+        0x02: "Group off",
+        0x03: "Group on",
+    }
     """
     Mapping of command numeric values to strings, used for cmnd_string
     """
 
-    COMMANDS_XX = {0x00: 'Off',
-                   0x01: 'On',
-                   }
+    COMMANDS_XX = {
+        0x00: "Off",
+        0x01: "On",
+    }
     """
     Mapping of command numeric values to strings, used for cmnd_string
     """
 
     def __str__(self):
-        return ("Lighting5 [subtype={0}, seqnbr={1}, id={2}, cmnd={3}, " +
-                "level={4}, rssi={5}]") \
-            .format(self.type_string, self.seqnbr, self.id_string,
-                    self.cmnd_string, self.level, self.rssi)
+        return (
+            "Lighting5 [subtype={0}, seqnbr={1}, id={2}, cmnd={3}, "
+            + "level={4}, rssi={5}]"
+        ).format(
+            self.type_string,
+            self.seqnbr,
+            self.id_string,
+            self.cmnd_string,
+            self.level,
+            self.rssi,
+        )
 
     def __init__(self):
         """Constructor"""
@@ -679,8 +773,8 @@ class Lighting5(Packet):
             self.subtype = subtype
             self.id_combined = int(id_string[:6], 16)
             self.id1 = self.id_combined >> 16
-            self.id2 = self.id_combined >> 8 & 0xff
-            self.id3 = self.id_combined & 0xff
+            self.id2 = self.id_combined >> 8 & 0xFF
+            self.id3 = self.id_combined & 0xFF
             self.unitcode = int(id_string[7:])
             self._set_strings()
         except:
@@ -706,26 +800,36 @@ class Lighting5(Packet):
         self.rssi = self.rssi_byte >> 4
         self._set_strings()
 
-    def set_transmit(self, subtype, seqnbr, id_combined, unitcode, cmnd,
-                     level):
+    def set_transmit(self, subtype, seqnbr, id_combined, unitcode, cmnd, level):
         """Load data from individual data fields"""
-        self.packetlength = 0x0a
+        self.packetlength = 0x0A
         self.packettype = 0x14
         self.subtype = subtype
         self.seqnbr = seqnbr
         self.id_combined = id_combined
         self.id1 = id_combined >> 16
-        self.id2 = id_combined >> 8 & 0xff
-        self.id3 = id_combined & 0xff
+        self.id2 = id_combined >> 8 & 0xFF
+        self.id3 = id_combined & 0xFF
         self.unitcode = unitcode
         self.cmnd = cmnd
         self.level = level
         self.rssi_byte = 0
         self.rssi = 0
-        self.data = bytearray([self.packetlength, self.packettype,
-                               self.subtype, self.seqnbr, self.id1, self.id2,
-                               self.id3, self.unitcode, self.cmnd,
-                               self.level, self.rssi_byte])
+        self.data = bytearray(
+            [
+                self.packetlength,
+                self.packettype,
+                self.subtype,
+                self.seqnbr,
+                self.id1,
+                self.id2,
+                self.id3,
+                self.unitcode,
+                self.cmnd,
+                self.level,
+                self.rssi_byte,
+            ]
+        )
         self._set_strings()
 
     def _set_strings(self):
@@ -734,9 +838,8 @@ class Lighting5(Packet):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
-            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
-                                                         self.subtype)
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype, self.subtype)
         if self.cmnd is not None:
             if self.subtype == 0x00 and self.cmnd in self.COMMANDS_00:
                 self.cmnd_string = self.COMMANDS_00[self.cmnd]
@@ -754,31 +857,41 @@ class Lighting5(Packet):
 # Lighting6 class
 ###############################################################################
 
+
 class Lighting6(Packet):
     """
     Data class for the Lighting6 packet type
     """
 
-    TYPES = {0x00: 'Blyss',
-             }
+    TYPES = {
+        0x00: "Blyss",
+    }
     """
     Mapping of numeric subtype values to strings, used in type_string
     """
 
-    COMMANDS = {0x00: 'On',
-                0x01: 'Off',
-                0x02: 'Group on',
-                0x03: 'Group off',
-                }
+    COMMANDS = {
+        0x00: "On",
+        0x01: "Off",
+        0x02: "Group on",
+        0x03: "Group off",
+    }
     """
     Mapping of command numeric values to strings, used for cmnd_string
     """
 
     def __str__(self):
-        return ("Lighting6 [subtype={0}, seqnbr={1}, id={2}, cmnd={3}, " +
-                "cmndseqnbr={4}, rssi={5}]") \
-            .format(self.type_string, self.seqnbr, self.id_string,
-                    self.cmnd_string, self.cmndseqnbr, self.rssi)
+        return (
+            "Lighting6 [subtype={0}, seqnbr={1}, id={2}, cmnd={3}, "
+            + "cmndseqnbr={4}, rssi={5}]"
+        ).format(
+            self.type_string,
+            self.seqnbr,
+            self.id_string,
+            self.cmnd_string,
+            self.cmndseqnbr,
+            self.rssi,
+        )
 
     def __init__(self):
         """Constructor"""
@@ -800,8 +913,8 @@ class Lighting6(Packet):
             self.packettype = 0x15
             self.subtype = subtype
             self.id_combined = int(id_string[:4], 16)
-            self.id1 = self.id_combined >> 8 & 0xff
-            self.id2 = self.id_combined & 0xff
+            self.id1 = self.id_combined >> 8 & 0xFF
+            self.id2 = self.id_combined & 0xFF
             self.groupcode = ord(id_string[5])
             self.unitcode = int(id_string[6:])
             self._set_strings()
@@ -829,16 +942,17 @@ class Lighting6(Packet):
         self.rssi = self.rssi_byte >> 4
         self._set_strings()
 
-    def set_transmit(self, subtype, seqnbr, id_combined, groupcode, unitcode,
-                     cmnd, cmndseqnbr):
+    def set_transmit(
+        self, subtype, seqnbr, id_combined, groupcode, unitcode, cmnd, cmndseqnbr
+    ):
         """Load data from individual data fields"""
-        self.packetlength = 0x0b
+        self.packetlength = 0x0B
         self.packettype = 0x15
         self.subtype = subtype
         self.seqnbr = seqnbr
         self.id_combined = id_combined
-        self.id1 = id_combined >> 8 & 0xff
-        self.id2 = id_combined & 0xff
+        self.id1 = id_combined >> 8 & 0xFF
+        self.id2 = id_combined & 0xFF
         self.groupcode = groupcode
         self.unitcode = unitcode
         self.cmnd = cmnd
@@ -846,23 +960,34 @@ class Lighting6(Packet):
         self.rfu = 0
         self.rssi_byte = 0
         self.rssi = 0
-        self.data = bytearray([self.packetlength, self.packettype,
-                               self.subtype, self.seqnbr, self.id1, self.id2,
-                               self.groupcode, self.unitcode, self.cmnd,
-                               self.cmndseqnbr, self.rfu, self.rssi_byte])
+        self.data = bytearray(
+            [
+                self.packetlength,
+                self.packettype,
+                self.subtype,
+                self.seqnbr,
+                self.id1,
+                self.id2,
+                self.groupcode,
+                self.unitcode,
+                self.cmnd,
+                self.cmndseqnbr,
+                self.rfu,
+                self.rssi_byte,
+            ]
+        )
         self._set_strings()
 
     def _set_strings(self):
         """Translate loaded numeric values into convenience strings"""
-        self.id_string = "{0:04x}:{1}{2}".format(self.id_combined,
-                                                 chr(self.groupcode),
-                                                 self.unitcode)
+        self.id_string = "{0:04x}:{1}{2}".format(
+            self.id_combined, chr(self.groupcode), self.unitcode
+        )
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
-            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
-                                                         self.subtype)
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype, self.subtype)
         if self.cmnd is not None:
             if self.cmnd in self.COMMANDS:
                 self.cmnd_string = self.COMMANDS[self.cmnd]
@@ -874,26 +999,31 @@ class Lighting6(Packet):
 # SensorPacket class
 ###############################################################################
 
+
 class SensorPacket(Packet):
     """
     Abstract superclass for all sensor related packets
     """
 
-    HUMIDITY_TYPES = {0x00: 'dry',
-                      0x01: 'comfort',
-                      0x02: 'normal',
-                      0x03: 'wet',
-                      -1: 'unknown humidity'}
+    HUMIDITY_TYPES = {
+        0x00: "dry",
+        0x01: "comfort",
+        0x02: "normal",
+        0x03: "wet",
+        -1: "unknown humidity",
+    }
     """
     Mapping of humidity types to string
     """
 
-    FORECAST_TYPES = {0x00: 'no forecast available',
-                      0x01: 'sunny',
-                      0x02: 'partly cloudy',
-                      0x03: 'cloudy',
-                      0x04: 'rain',
-                      -1: 'unknown forecast'}
+    FORECAST_TYPES = {
+        0x00: "no forecast available",
+        0x01: "sunny",
+        0x02: "partly cloudy",
+        0x03: "cloudy",
+        0x04: "rain",
+        -1: "unknown forecast",
+    }
     """
     Mapping of forecast types to string
     """
@@ -907,31 +1037,40 @@ class SensorPacket(Packet):
 # Temp class
 ###############################################################################
 
+
 class Temp(SensorPacket):
     """
     Data class for the Temp1 packet type
     """
 
-    TYPES = {0x01: 'THR128/138, THC138',
-             0x02: 'THC238/268,THN132,THWR288,THRN122,THN122,AW129/131',
-             0x03: 'THWR800',
-             0x04: 'RTHN318',
-             0x05: 'La Crosse TX2, TX3, TX4, TX17',
-             0x06: 'TS15C',
-             0x07: 'Viking 02811',
-             0x08: 'La Crosse WS2300',
-             0x09: 'RUBiCSON',
-             0x0a: 'TFA 30.3133',
-             }
+    TYPES = {
+        0x01: "THR128/138, THC138",
+        0x02: "THC238/268,THN132,THWR288,THRN122,THN122,AW129/131",
+        0x03: "THWR800",
+        0x04: "RTHN318",
+        0x05: "La Crosse TX2, TX3, TX4, TX17",
+        0x06: "TS15C",
+        0x07: "Viking 02811",
+        0x08: "La Crosse WS2300",
+        0x09: "RUBiCSON",
+        0x0A: "TFA 30.3133",
+    }
     """
     Mapping of numeric subtype values to strings, used in type_string
     """
 
     def __str__(self):
-        return ("Temp [subtype={0}, seqnbr={1}, id={2}, temp={3}, " +
-                "battery={4}, rssi={5}]") \
-            .format(self.type_string, self.seqnbr, self.id_string,
-                    self.temp, self.battery, self.rssi)
+        return (
+            "Temp [subtype={0}, seqnbr={1}, id={2}, temp={3}, "
+            + "battery={4}, rssi={5}]"
+        ).format(
+            self.type_string,
+            self.seqnbr,
+            self.id_string,
+            self.temp,
+            self.battery,
+            self.rssi,
+        )
 
     def __init__(self):
         """Constructor"""
@@ -954,11 +1093,11 @@ class Temp(SensorPacket):
         self.id2 = data[5]
         self.temphigh = data[6]
         self.templow = data[7]
-        self.temp = float(((self.temphigh & 0x7f) << 8) + self.templow) / 10
+        self.temp = float(((self.temphigh & 0x7F) << 8) + self.templow) / 10
         if self.temphigh >= 0x80:
             self.temp = -self.temp
         self.rssi_byte = data[8]
-        self.battery = self.rssi_byte & 0x0f
+        self.battery = self.rssi_byte & 0x0F
         self.rssi = self.rssi_byte >> 4
         self._set_strings()
 
@@ -968,33 +1107,41 @@ class Temp(SensorPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
-            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
-                                                         self.subtype)
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype, self.subtype)
 
 
 ###############################################################################
 # Humid class
 ###############################################################################
 
+
 class Humid(SensorPacket):
     """
     Data class for the Humid packet type
     """
 
-    TYPES = {0x01: 'LaCrosse TX3',
-             0x02: 'LaCrosse WS2300',
-             }
+    TYPES = {
+        0x01: "LaCrosse TX3",
+        0x02: "LaCrosse WS2300",
+    }
     """
     Mapping of numeric subtype values to strings, used in type_string
     """
 
     def __str__(self):
-        return ("Humid [subtype={0}, seqnbr={1}, id={2}, " +
-                "humidity={3}, humidity_status={4}, battery={5}, rssi={6}]") \
-            .format(self.type_string, self.seqnbr, self.id_string,
-                    self.humidity, self.humidity_status,
-                    self.battery, self.rssi)
+        return (
+            "Humid [subtype={0}, seqnbr={1}, id={2}, "
+            + "humidity={3}, humidity_status={4}, battery={5}, rssi={6}]"
+        ).format(
+            self.type_string,
+            self.seqnbr,
+            self.id_string,
+            self.humidity,
+            self.humidity_status,
+            self.battery,
+            self.rssi,
+        )
 
     def __init__(self):
         """Constructor"""
@@ -1018,7 +1165,7 @@ class Humid(SensorPacket):
         self.humidity = data[6]
         self.humidity_status = data[7]
         self.rssi_byte = data[8]
-        self.battery = self.rssi_byte & 0x0f
+        self.battery = self.rssi_byte & 0x0F
         self.rssi = self.rssi_byte >> 4
         self._set_strings()
 
@@ -1028,12 +1175,10 @@ class Humid(SensorPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
-            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
-                                                         self.subtype)
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype, self.subtype)
         if self.humidity_status in self.HUMIDITY_TYPES:
-            self.humidity_status_string = \
-                self.HUMIDITY_TYPES[self.humidity_status]
+            self.humidity_status_string = self.HUMIDITY_TYPES[self.humidity_status]
         else:
             self.humidity_status_string = self.HUMIDITY_TYPES[-1]
 
@@ -1042,31 +1187,41 @@ class Humid(SensorPacket):
 # TempHumid class
 ###############################################################################
 
+
 class TempHumid(SensorPacket):
     """
     Data class for the TempHumid packet type
     """
 
-    TYPES = {0x01: 'THGN122/123, THGN132, THGR122/228/238/268',
-             0x02: 'THGR810, THGN800',
-             0x03: 'RTGR328',
-             0x04: 'THGR328',
-             0x05: 'WTGR800',
-             0x06: 'THGR918, THGRN228, THGN500',
-             0x07: 'TFA TS34C, Cresta',
-             0x08: 'WT260,WT260H,WT440H,WT450,WT450H',
-             0x09: 'Viking 02035,02038',
-             }
+    TYPES = {
+        0x01: "THGN122/123, THGN132, THGR122/228/238/268",
+        0x02: "THGR810, THGN800",
+        0x03: "RTGR328",
+        0x04: "THGR328",
+        0x05: "WTGR800",
+        0x06: "THGR918, THGRN228, THGN500",
+        0x07: "TFA TS34C, Cresta",
+        0x08: "WT260,WT260H,WT440H,WT450,WT450H",
+        0x09: "Viking 02035,02038",
+    }
     """
     Mapping of numeric subtype values to strings, used in type_string
     """
 
     def __str__(self):
-        return ("TempHumid [subtype={0}, seqnbr={1}, id={2}, temp={3}, " +
-                "humidity={4}, humidity_status={5}, battery={6}, rssi={7}]") \
-            .format(self.type_string, self.seqnbr, self.id_string,
-                    self.temp, self.humidity, self.humidity_status,
-                    self.battery, self.rssi)
+        return (
+            "TempHumid [subtype={0}, seqnbr={1}, id={2}, temp={3}, "
+            + "humidity={4}, humidity_status={5}, battery={6}, rssi={7}]"
+        ).format(
+            self.type_string,
+            self.seqnbr,
+            self.id_string,
+            self.temp,
+            self.humidity,
+            self.humidity_status,
+            self.battery,
+            self.rssi,
+        )
 
     def __init__(self):
         """Constructor"""
@@ -1092,13 +1247,13 @@ class TempHumid(SensorPacket):
         self.id2 = data[5]
         self.temphigh = data[6]
         self.templow = data[7]
-        self.temp = float(((self.temphigh & 0x7f) << 8) + self.templow) / 10
+        self.temp = float(((self.temphigh & 0x7F) << 8) + self.templow) / 10
         if self.temphigh >= 0x80:
             self.temp = -self.temp
         self.humidity = data[8]
         self.humidity_status = data[9]
         self.rssi_byte = data[10]
-        self.battery = self.rssi_byte & 0x0f
+        self.battery = self.rssi_byte & 0x0F
         self.rssi = self.rssi_byte >> 4
         self._set_strings()
 
@@ -1108,12 +1263,10 @@ class TempHumid(SensorPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
-            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
-                                                         self.subtype)
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype, self.subtype)
         if self.humidity_status in self.HUMIDITY_TYPES:
-            self.humidity_status_string = \
-                self.HUMIDITY_TYPES[self.humidity_status]
+            self.humidity_status_string = self.HUMIDITY_TYPES[self.humidity_status]
         else:
             self.humidity_status_string = self.HUMIDITY_TYPES[-1]
 
@@ -1121,6 +1274,7 @@ class TempHumid(SensorPacket):
 ###############################################################################
 # Baro class
 ###############################################################################
+
 
 class Baro(SensorPacket):
     """
@@ -1133,10 +1287,18 @@ class Baro(SensorPacket):
     """
 
     def __str__(self):
-        return ("Baro [subtype={0}, seqnbr={1}, id={2}, baro={3}, " +
-                "forecast={4}, battery={5}, rssi={6}]") \
-            .format(self.type_string, self.seqnbr, self.id_string, self.baro,
-                    self.forecast, self.battery, self.rssi)
+        return (
+            "Baro [subtype={0}, seqnbr={1}, id={2}, baro={3}, "
+            + "forecast={4}, battery={5}, rssi={6}]"
+        ).format(
+            self.type_string,
+            self.seqnbr,
+            self.id_string,
+            self.baro,
+            self.forecast,
+            self.battery,
+            self.rssi,
+        )
 
     def __init__(self):
         """Constructor"""
@@ -1159,12 +1321,12 @@ class Baro(SensorPacket):
         self.seqnbr = data[3]
         self.id1 = data[4]
         self.id2 = data[5]
-        self.baro1 = data[6] & 0x0f
+        self.baro1 = data[6] & 0x0F
         self.baro2 = data[7]
         self.baro = (self.baro1 << 8) + self.baro2
         self.forecast = data[8]
         self.rssi_byte = data[9]
-        self.battery = self.rssi_byte & 0x0f
+        self.battery = self.rssi_byte & 0x0F
         self.rssi = self.rssi_byte >> 4
         self._set_strings()
 
@@ -1174,9 +1336,8 @@ class Baro(SensorPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
-            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
-                                                         self.subtype)
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype, self.subtype)
         if self.forecast in self.FORECAST_TYPES:
             self.forecast_string = self.FORECAST_TYPES[self.forecast]
         else:
@@ -1187,25 +1348,37 @@ class Baro(SensorPacket):
 # TempHumidBaro class
 ###############################################################################
 
+
 class TempHumidBaro(SensorPacket):
     """
     Data class for the TempHumidBaro packet type
     """
 
-    TYPES = {0x01: 'BTHR918',
-             0x02: 'BTHR918N, BTHR968',
-             }
+    TYPES = {
+        0x01: "BTHR918",
+        0x02: "BTHR918N, BTHR968",
+    }
     """
     Mapping of numeric subtype values to strings, used in type_string
     """
 
     def __str__(self):
-        return ("TempHumidBaro [subtype={0}, seqnbr={1}, id={2}, temp={3}, " +
-                "humidity={4}, humidity_status={5}, baro={6}, forecast={7}, " +
-                "battery={8}, rssi={9}]") \
-            .format(self.type_string, self.seqnbr, self.id_string, self.temp,
-                    self.humidity, self.humidity_status, self.baro,
-                    self.forecast, self.battery, self.rssi)
+        return (
+            "TempHumidBaro [subtype={0}, seqnbr={1}, id={2}, temp={3}, "
+            + "humidity={4}, humidity_status={5}, baro={6}, forecast={7}, "
+            + "battery={8}, rssi={9}]"
+        ).format(
+            self.type_string,
+            self.seqnbr,
+            self.id_string,
+            self.temp,
+            self.humidity,
+            self.humidity_status,
+            self.baro,
+            self.forecast,
+            self.battery,
+            self.rssi,
+        )
 
     def __init__(self):
         """Constructor"""
@@ -1236,18 +1409,18 @@ class TempHumidBaro(SensorPacket):
         self.id2 = data[5]
         self.temphigh = data[6]
         self.templow = data[7]
-        self.temp = float(((self.temphigh & 0x7f) << 8) + self.templow) / 10
+        self.temp = float(((self.temphigh & 0x7F) << 8) + self.templow) / 10
         if self.temphigh >= 0x80:
             self.temp = -self.temp
         self.humidity = data[8]
         self.humidity_status = data[9]
-        self.baro1 = data[10] & 0x0f
+        self.baro1 = data[10] & 0x0F
         self.baro2 = data[11]
         # note this is in hPa
         self.baro = (data[10] << 8) + data[11]
         self.forecast = data[12]
         self.rssi_byte = data[13]
-        self.battery = self.rssi_byte & 0x0f
+        self.battery = self.rssi_byte & 0x0F
         self.rssi = self.rssi_byte >> 4
         self._set_strings()
 
@@ -1257,12 +1430,10 @@ class TempHumidBaro(SensorPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
-            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
-                                                         self.subtype)
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype, self.subtype)
         if self.humidity_status in self.HUMIDITY_TYPES:
-            self.humidity_status_string = \
-                self.HUMIDITY_TYPES[self.humidity_status]
+            self.humidity_status_string = self.HUMIDITY_TYPES[self.humidity_status]
         else:
             self.humidity_status_string = self.HUMIDITY_TYPES[-1]
         if self.forecast in self.FORECAST_TYPES:
@@ -1275,6 +1446,7 @@ class TempHumidBaro(SensorPacket):
 #
 ##################
 
+
 class RainGauge(SensorPacket):
 
     TYPES = {
@@ -1282,7 +1454,8 @@ class RainGauge(SensorPacket):
         0x02: "PCR800",
         0x03: "TFA",
         0x04: "UPM RG700",
-        0x05: "WS2300"}
+        0x05: "WS2300",
+    }
 
     def __init__(self):
         """Constructor"""
@@ -1313,11 +1486,12 @@ class RainGauge(SensorPacket):
         self.raintotal1 = data[8]
         self.raintotal2 = data[9]
         self.raintotal3 = data[10]
-        self.raintotal = float((self.raintotal1 << 16) +
-                               (self.raintotal2 << 8) +
-                               self.raintotal3) / 10
+        self.raintotal = (
+            float((self.raintotal1 << 16) + (self.raintotal2 << 8) + self.raintotal3)
+            / 10
+        )
         self.rssi_byte = data[11]
-        self.battery = self.rssi_byte & 0x0f
+        self.battery = self.rssi_byte & 0x0F
         self.rssi = self.rssi_byte >> 4
         self._set_strings()
 
@@ -1327,31 +1501,40 @@ class RainGauge(SensorPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
-            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
-                                                         self.subtype)
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype, self.subtype)
+
 
 #################
 #
 ##################
 
+
 class Wind(SensorPacket):
 
     TYPES = {
-        0x01:"WTGR800",
-        0x02:"WGR800",
-        0x03:"STR918, WGR918",
-        0x04:"TFA (WIND4)",
-        0x05:"UPM WDS500",
-        0x06:"WS2300"}
+        0x01: "WTGR800",
+        0x02: "WGR800",
+        0x03: "STR918, WGR918",
+        0x04: "TFA (WIND4)",
+        0x05: "UPM WDS500",
+        0x06: "WS2300",
+    }
 
     def __str__(self):
-        return (("Wind [subtype={0}, seqnbr={1}, id={2}, direction={3}, " +
-                 "average_speed={4}, gust={5}, battery={6}, rssi={7}]").
-                format(self.type_string, self.seqnbr, self.id_string,
-                       self.direction,
-                       self.average_speed, self.gust,
-                       self.battery, self.rssi))
+        return (
+            "Wind [subtype={0}, seqnbr={1}, id={2}, direction={3}, "
+            + "average_speed={4}, gust={5}, battery={6}, rssi={7}]"
+        ).format(
+            self.type_string,
+            self.seqnbr,
+            self.id_string,
+            self.direction,
+            self.average_speed,
+            self.gust,
+            self.battery,
+            self.rssi,
+        )
 
     def __init__(self):
         """Constructor"""
@@ -1389,7 +1572,7 @@ class Wind(SensorPacket):
             self.battery = (data[16] + 1) * 10
         else:
             self.rssi_byte = data[16]
-            self.battery = self.rssi_byte & 0x0f
+            self.battery = self.rssi_byte & 0x0F
             self.rssi = self.rssi_byte >> 4
 
         self._set_strings()
@@ -1400,20 +1583,18 @@ class Wind(SensorPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
-            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
-                                                         self.subtype)
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype, self.subtype)
+
 
 #################
 #
 ##################
 
+
 class UV(SensorPacket):
 
-    TYPES = {
-        0x01: "UVN128, UV138",
-        0x02: "UVN800",
-        0x03: "TFA"}
+    TYPES = {0x01: "UVN128, UV138", 0x02: "UVN800", 0x03: "TFA"}
 
     def __init__(self):
         """Constructor"""
@@ -1439,7 +1620,7 @@ class UV(SensorPacket):
         self.uv2 = data[7]
         self.uv = (self.uv1 << 8) + self.uv2
         self.rssi_byte = data[8]
-        self.battery = self.rssi_byte & 0x0f
+        self.battery = self.rssi_byte & 0x0F
         self.rssi = self.rssi_byte >> 4
         self._set_strings()
 
@@ -1449,6 +1630,5 @@ class UV(SensorPacket):
         if self.subtype in self.TYPES:
             self.type_string = self.TYPES[self.subtype]
         else:
-            #Degrade nicely for yet unknown subtypes
-            self.type_string = self._UNKNOWN_TYPE.format(self.packettype,
-                                                         self.subtype)
+            # Degrade nicely for yet unknown subtypes
+            self.type_string = self._UNKNOWN_TYPE.format(self.packettype, self.subtype)

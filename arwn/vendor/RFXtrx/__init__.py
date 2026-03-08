@@ -20,21 +20,22 @@
 """
 This module provides the base implementation for pyRFXtrx
 """
+
 # pylint: disable=R0903
 
 from arwn.vendor.RFXtrx import lowlevel
-
 
 ###############################################################################
 # RFXtrxTransport class
 ###############################################################################
 
+
 class RFXtrxTransport(object):
-    """ Abstract superclass for all transport mechanisms """
+    """Abstract superclass for all transport mechanisms"""
 
     @staticmethod
     def parse(data):
-        """ Parse the given data and return an RFXtrxEvent """
+        """Parse the given data and return an RFXtrxEvent"""
         pkt = lowlevel.parse(data)
         if pkt is not None:
             if isinstance(pkt, lowlevel.SensorPacket):
@@ -47,8 +48,9 @@ class RFXtrxTransport(object):
 # RFXtrxDevice class
 ###############################################################################
 
+
 class RFXtrxDevice(object):
-    """ Superclass for all devices """
+    """Superclass for all devices"""
 
     def __init__(self, pkt):
         self.packettype = pkt.packettype
@@ -66,15 +68,17 @@ class RFXtrxDevice(object):
 
     def __str__(self):
         return "{0} type='{1}' id='{2}'".format(
-            type(self), self.type_string, self.id_string)
+            type(self), self.type_string, self.id_string
+        )
 
 
 ###############################################################################
 # LightingDevice class
 ###############################################################################
 
+
 class LightingDevice(RFXtrxDevice):
-    """ Concrete class for a lighting device """
+    """Concrete class for a lighting device"""
 
     def __init__(self, pkt):
         super(LightingDevice, self).__init__(pkt)
@@ -97,70 +101,84 @@ class LightingDevice(RFXtrxDevice):
             self.cmndseqnbr = 0
 
     def send_on(self, transport):
-        """ Send an 'On' command using the given transport """
+        """Send an 'On' command using the given transport"""
         if self.packettype == 0x10:  # Lighting1
             pkt = lowlevel.Lighting1()
-            pkt.set_transmit(self.subtype, 0, self.housecode, self.unitcode,
-                             0x01)
+            pkt.set_transmit(self.subtype, 0, self.housecode, self.unitcode, 0x01)
             transport.send(pkt.data)
         elif self.packettype == 0x11:  # Lighting2
             pkt = lowlevel.Lighting2()
-            pkt.set_transmit(self.subtype, 0, self.id_combined, self.unitcode,
-                             0x01, 0x00)
+            pkt.set_transmit(
+                self.subtype, 0, self.id_combined, self.unitcode, 0x01, 0x00
+            )
             transport.send(pkt.data)
         elif self.packettype == 0x12:  # Lighting3
             pkt = lowlevel.Lighting3()
-            pkt.set_transmit(self.subtype, 0, self.system, self.channel,
-                             0x10)
+            pkt.set_transmit(self.subtype, 0, self.system, self.channel, 0x10)
             transport.send(pkt.data)
         elif self.packettype == 0x14:  # Lighting5
             pkt = lowlevel.Lighting5()
-            pkt.set_transmit(self.subtype, 0, self.id_combined, self.unitcode,
-                             0x01, 0x00)
+            pkt.set_transmit(
+                self.subtype, 0, self.id_combined, self.unitcode, 0x01, 0x00
+            )
             transport.send(pkt.data)
         elif self.packettype == 0x15:  # Lighting6
             pkt = lowlevel.Lighting6()
-            pkt.set_transmit(self.subtype, 0, self.id_combined, self.groupcode,
-                             self.unitcode, 0x00, self.cmndseqnbr)
+            pkt.set_transmit(
+                self.subtype,
+                0,
+                self.id_combined,
+                self.groupcode,
+                self.unitcode,
+                0x00,
+                self.cmndseqnbr,
+            )
             self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
             transport.send(pkt.data)
         else:
             raise ValueError("Unsupported packettype")
 
     def send_off(self, transport):
-        """ Send an 'Off' command using the given transport """
+        """Send an 'Off' command using the given transport"""
         if self.packettype == 0x10:  # Lighting1
             pkt = lowlevel.Lighting1()
-            pkt.set_transmit(self.subtype, 0, self.housecode, self.unitcode,
-                             0x00)
+            pkt.set_transmit(self.subtype, 0, self.housecode, self.unitcode, 0x00)
             transport.send(pkt.data)
         elif self.packettype == 0x11:  # Lighting2
             pkt = lowlevel.Lighting2()
-            pkt.set_transmit(self.subtype, 0, self.id_combined, self.unitcode,
-                             0x00, 0x00)
+            pkt.set_transmit(
+                self.subtype, 0, self.id_combined, self.unitcode, 0x00, 0x00
+            )
             transport.send(pkt.data)
         elif self.packettype == 0x12:  # Lighting3
             pkt = lowlevel.Lighting3()
-            pkt.set_transmit(self.subtype, 0, self.system, self.channel,
-                             0x1a)
+            pkt.set_transmit(self.subtype, 0, self.system, self.channel, 0x1A)
             transport.send(pkt.data)
         elif self.packettype == 0x14:  # Lighting5
             pkt = lowlevel.Lighting5()
-            pkt.set_transmit(self.subtype, 0, self.id_combined, self.unitcode,
-                             0x00, 0x00)
+            pkt.set_transmit(
+                self.subtype, 0, self.id_combined, self.unitcode, 0x00, 0x00
+            )
             transport.send(pkt.data)
         elif self.packettype == 0x15:  # Lighting6
             pkt = lowlevel.Lighting6()
-            pkt.set_transmit(self.subtype, 0, self.id_combined, self.groupcode,
-                             self.unitcode, 0x01, self.cmndseqnbr)
+            pkt.set_transmit(
+                self.subtype,
+                0,
+                self.id_combined,
+                self.groupcode,
+                self.unitcode,
+                0x01,
+                self.cmndseqnbr,
+            )
             self.cmndseqnbr = (self.cmndseqnbr + 1) % 5
             transport.send(pkt.data)
         else:
             raise ValueError("Unsupported packettype")
 
     def send_dim(self, transport, level):
-        """ Send a 'Dim' command with the given level using the given
-            transport
+        """Send a 'Dim' command with the given level using the given
+        transport
         """
         if self.packettype == 0x10:  # Lighting1
             raise ValueError("Dim level unsupported for Lighting1")
@@ -171,9 +189,14 @@ class LightingDevice(RFXtrxDevice):
                 self.send_off(transport)
             else:
                 pkt = lowlevel.Lighting2()
-                pkt.set_transmit(self.subtype, 0, self.id_combined,
-                                 self.unitcode, 0x02,
-                                 ((level + 6) * 16 // 100) - 1)
+                pkt.set_transmit(
+                    self.subtype,
+                    0,
+                    self.id_combined,
+                    self.unitcode,
+                    0x02,
+                    ((level + 6) * 16 // 100) - 1,
+                )
                 transport.send(pkt.data)
         elif self.packettype == 0x12:  # Lighting3
             raise ValueError("Dim level unsupported for Lighting3")
@@ -186,9 +209,14 @@ class LightingDevice(RFXtrxDevice):
                 self.send_off(transport)
             else:
                 pkt = lowlevel.Lighting5()
-                pkt.set_transmit(self.subtype, 0, self.id_combined,
-                                 self.unitcode, 0x10,
-                                 ((level + 3) * 32 // 100) - 1)
+                pkt.set_transmit(
+                    self.subtype,
+                    0,
+                    self.id_combined,
+                    self.unitcode,
+                    0x10,
+                    ((level + 3) * 32 // 100) - 1,
+                )
                 transport.send(pkt.data)
         elif self.packettype == 0x15:  # Lighting6
             raise ValueError("Dim level unsupported for Lighting6")
@@ -200,8 +228,9 @@ class LightingDevice(RFXtrxDevice):
 # get_devide method
 ###############################################################################
 
+
 def get_device(packettype, subtype, id_string):
-    """ Return a device base on its identifying values """
+    """Return a device base on its identifying values"""
     if packettype == 0x10:  # Lighting1
         pkt = lowlevel.Lighting1()
         pkt.parse_id(subtype, id_string)
@@ -230,8 +259,9 @@ def get_device(packettype, subtype, id_string):
 # RFXtrxEvent class
 ###############################################################################
 
+
 class RFXtrxEvent(object):
-    """ Abstract superclass for all events """
+    """Abstract superclass for all events"""
 
     def __init__(self, device):
         self.device = device
@@ -241,73 +271,84 @@ class RFXtrxEvent(object):
 # SensorEvent class
 ###############################################################################
 
+
 class SensorEvent(RFXtrxEvent):
-    """ Concrete class for sensor events """
+    """Concrete class for sensor events"""
 
     def __init__(self, pkt):
         device = RFXtrxDevice(pkt)
         super(SensorEvent, self).__init__(device)
 
         self.values = {}
-        if isinstance(pkt, lowlevel.Temp) \
-                or isinstance(pkt, lowlevel.TempHumid) \
-                or isinstance(pkt, lowlevel.TempHumidBaro):
-            self.values['Temperature (C)'] = pkt.temp
-        if isinstance(pkt, lowlevel.Humid) \
-                or isinstance(pkt, lowlevel.TempHumid) \
-                or isinstance(pkt, lowlevel.TempHumidBaro):
-            self.values['Humidity'] = pkt.humidity
-            self.values['Humidity status'] = pkt.humidity_status_string
-            self.values['Humidity status numeric'] = pkt.humidity_status
-        if isinstance(pkt, lowlevel.Baro) \
-                or isinstance(pkt, lowlevel.TempHumidBaro):
-            self.values['Barometer (hPa)'] = pkt.baro
-            self.values['Forecast'] = pkt.forecast_string
-            self.values['Forecast numeric'] = pkt.forecast
+        if (
+            isinstance(pkt, lowlevel.Temp)
+            or isinstance(pkt, lowlevel.TempHumid)
+            or isinstance(pkt, lowlevel.TempHumidBaro)
+        ):
+            self.values["Temperature (C)"] = pkt.temp
+        if (
+            isinstance(pkt, lowlevel.Humid)
+            or isinstance(pkt, lowlevel.TempHumid)
+            or isinstance(pkt, lowlevel.TempHumidBaro)
+        ):
+            self.values["Humidity"] = pkt.humidity
+            self.values["Humidity status"] = pkt.humidity_status_string
+            self.values["Humidity status numeric"] = pkt.humidity_status
+        if isinstance(pkt, lowlevel.Baro) or isinstance(pkt, lowlevel.TempHumidBaro):
+            self.values["Barometer (hPa)"] = pkt.baro
+            self.values["Forecast"] = pkt.forecast_string
+            self.values["Forecast numeric"] = pkt.forecast
         if isinstance(pkt, lowlevel.RainGauge):
-            self.values['Rain Rate (mm/hr)'] = pkt.rainrate
-            self.values['Rain Total (mm)'] = pkt.raintotal
+            self.values["Rain Rate (mm/hr)"] = pkt.rainrate
+            self.values["Rain Total (mm)"] = pkt.raintotal
         if isinstance(pkt, lowlevel.Wind):
-            self.values['Direction'] = pkt.direction
-            self.values['Average speed'] = pkt.average_speed
-            self.values['Gust'] = pkt.gust
-        self.values['Battery numeric'] = pkt.battery
-        self.values['Rssi numeric'] = pkt.rssi
+            self.values["Direction"] = pkt.direction
+            self.values["Average speed"] = pkt.average_speed
+            self.values["Gust"] = pkt.gust
+        self.values["Battery numeric"] = pkt.battery
+        self.values["Rssi numeric"] = pkt.rssi
 
     def __str__(self):
         return "{0} device=[{1}] values={2}".format(
-            type(self), self.device, sorted(self.values.items()))
+            type(self), self.device, sorted(self.values.items())
+        )
 
 
 ###############################################################################
 # ControlEvent class
 ###############################################################################
 
+
 class ControlEvent(RFXtrxEvent):
-    """ Concrete class for control events """
+    """Concrete class for control events"""
 
     def __init__(self, pkt):
-        if isinstance(pkt, lowlevel.Lighting1) \
-                or isinstance(pkt, lowlevel.Lighting2) \
-                or isinstance(pkt, lowlevel.Lighting3) \
-                or isinstance(pkt, lowlevel.Lighting5) \
-                or isinstance(pkt, lowlevel.Lighting6):
+        if (
+            isinstance(pkt, lowlevel.Lighting1)
+            or isinstance(pkt, lowlevel.Lighting2)
+            or isinstance(pkt, lowlevel.Lighting3)
+            or isinstance(pkt, lowlevel.Lighting5)
+            or isinstance(pkt, lowlevel.Lighting6)
+        ):
             device = LightingDevice(pkt)
         else:
             device = RFXtrxDevice(pkt)
         super(ControlEvent, self).__init__(device)
 
         self.values = {}
-        if isinstance(pkt, lowlevel.Lighting1) \
-                or isinstance(pkt, lowlevel.Lighting2) \
-                or isinstance(pkt, lowlevel.Lighting3):
-            self.values['Command'] = pkt.cmnd_string
+        if (
+            isinstance(pkt, lowlevel.Lighting1)
+            or isinstance(pkt, lowlevel.Lighting2)
+            or isinstance(pkt, lowlevel.Lighting3)
+        ):
+            self.values["Command"] = pkt.cmnd_string
         if isinstance(pkt, lowlevel.Lighting2) and pkt.cmnd in [2, 5]:
-            self.values['Dim level'] = (pkt.level + 1) * 100 // 16
+            self.values["Dim level"] = (pkt.level + 1) * 100 // 16
         if isinstance(pkt, lowlevel.Lighting5) and pkt.cmnd in [0x10]:
-            self.values['Dim level'] = (pkt.level + 1) * 100 // 32
-        self.values['Rssi numeric'] = pkt.rssi
+            self.values["Dim level"] = (pkt.level + 1) * 100 // 32
+        self.values["Rssi numeric"] = pkt.rssi
 
     def __str__(self):
         return "{0} device=[{1}] values={2}".format(
-            type(self), self.device, sorted(self.values.items()))
+            type(self), self.device, sorted(self.values.items())
+        )
