@@ -1,3 +1,10 @@
+# Test dependencies
+# Install with: pip install -e ".[dev]"
+#
+# This file is kept for backward compatibility.
+# All dependencies are now defined in pyproject.toml
+
+pytest>=7.0
+pytest-cov>=4.0
 fixtures
 mock
-pytest
