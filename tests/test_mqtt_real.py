@@ -9,101 +9,89 @@ Tests for `arwn` module.
 """
 
 import json
-import sys
 import time
-import unittest
 
 import paho.mqtt.client as mqtt
-import testtools
+import pytest
 
-import arwn
-from . import arwn_fixtures
-
-
-class TestMqttSpawn(testtools.TestCase):
-
-    def test_mqtt_fixture(self):
-        self.connected = False
-        self.received = ""
-        self.done = False
-
-        def on_connect(client, userdata, flags, rc):
-            client.subscribe("foo/#")
-            self.connected = True
-
-        def on_message(client, userdata, message):
-            self.received = message
-            self.done = True
-
-        try:
-            mos = arwn_fixtures.MosquittoReal()
-            self.useFixture(mos)
-        except arwn_fixtures.MosquittoSetupFail:
-            self.skipTest("Can't start mosquitto")
-
-        client = mqtt.Client()
-        client.on_connect = on_connect
-        client.on_message = on_message
-        client.connect("localhost", mos.port)
-        client.loop_start()
-        client.publish("foo/start", "foo", retain=True)
-        while not self.done:
-            # forces a flush of all messages
-            time.sleep(0.1)
-            client.loop_read()
-        self.assertTrue(self.connected, "Did not seem to connect")
-        self.assertEqual("foo", self.received.payload.decode(encoding="UTF-8"))
-        self.assertEqual("foo/start", self.received.topic)
+from arwn import engine
 
 
-class TestMQTTLifecycle(testtools.TestCase):
+def test_mqtt_fixture(mosquitto_real):
+    """Test MQTT fixture with real mosquitto broker."""
+    connected = False
+    received = None
+    done = False
 
-    def test_mqtt_disconnect(self):
-        self.received = []
-        try:
-            mos = arwn_fixtures.MosquittoReal()
-            self.useFixture(mos)
-        except arwn_fixtures.MosquittoSetupFail:
-            self.skipTest("Can't start mosquitto")
+    def on_connect(client, userdata, flags, rc):
+        client.subscribe("foo/#")
+        nonlocal connected
+        connected = True
 
-        config = dict(mqtt={})
-        mq = arwn.engine.MQTT("localhost", config, port=mos.port)
+    def on_message(client, userdata, message):
+        nonlocal received, done
+        received = message
+        done = True
 
-        def on_connect(client, userdata, flags, rc):
-            client.subscribe("%s/#" % mq.root, qos=2)
+    client = mqtt.Client()
+    client.on_connect = on_connect
+    client.on_message = on_message
+    client.connect("localhost", mosquitto_real)
+    client.loop_start()
+    client.publish("foo/start", "foo", retain=True)
 
-        def on_message(client, userdata, message):
-            self.received.append(
-                {message.topic: json.loads(message.payload.decode(encoding="UTF-8"))}
-            )
-            print("Got a message!")
-
-        client = mqtt.Client()
-        client.on_connect = on_connect
-        client.on_message = on_message
-        client.connect("localhost", mos.port)
-        client.loop_start()
-        # force a failure, this triggers the will. We have to force a
-        # sleep before the socket close otherwise the will can
-        # actually process as the first message because of the lack of
-        # order guaruntees.
+    # Wait for message with timeout
+    timeout = 5
+    start = time.time()
+    while not done and (time.time() - start) < timeout:
         time.sleep(0.1)
-        mq.client.socket().close()
-        mq.client.reconnect()
-        time.sleep(0.1)
+        client.loop_read()
 
-        self.assertEqual(3, len(self.received), self.received)
+    client.loop_stop()
+    client.disconnect()
 
-        self.assertEqual(
-            self.received[0]["%s/status" % mq.root]["status"], "alive", self.received[0]
+    assert connected, "Did not seem to connect"
+    assert received is not None, "Did not receive message"
+    assert received.payload.decode(encoding="UTF-8") == "foo"
+    assert received.topic == "foo/start"
+
+
+def test_mqtt_disconnect(mosquitto_real):
+    """Test MQTT disconnect and reconnect behavior."""
+    received = []
+
+    config = dict(mqtt={})
+    mq = engine.MQTT("localhost", config, port=mosquitto_real)
+
+    def on_connect(client, userdata, flags, rc):
+        client.subscribe("%s/#" % mq.root, qos=2)
+
+    def on_message(client, userdata, message):
+        received.append(
+            {message.topic: json.loads(message.payload.decode(encoding="UTF-8"))}
         )
-        self.assertEqual(
-            self.received[1]["%s/status" % mq.root]["status"], "dead", self.received[1]
-        )
-        self.assertEqual(
-            self.received[2]["%s/status" % mq.root]["status"], "alive", self.received[2]
-        )
+        print("Got a message!")
 
+    client = mqtt.Client()
+    client.on_connect = on_connect
+    client.on_message = on_message
+    client.connect("localhost", mosquitto_real)
+    client.loop_start()
 
-if __name__ == "__main__":
-    sys.exit(unittest.main())
+    # force a failure, this triggers the will. We have to force a
+    # sleep before the socket close otherwise the will can
+    # actually process as the first message because of the lack of
+    # order guaruntees.
+    time.sleep(0.1)
+    mq.client.socket().close()
+    mq.client.reconnect()
+    time.sleep(0.1)
+
+    client.loop_stop()
+    client.disconnect()
+
+    assert len(received) == 3, received
+
+    assert received[0]["%s/status" % mq.root]["status"] == "alive", received[0]
+    assert received[1]["%s/status" % mq.root]["status"] == "dead", received[1]
+    assert received[2]["%s/status" % mq.root]["status"] == "alive", received[2]
