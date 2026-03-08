@@ -1,10 +1,25 @@
-bumpversion==0.5.3
-wheel==0.38.1
-watchdog==0.8.3
-flake8==2.4.1
-tox==2.1.1
-coverage==4.0
-Sphinx==1.3.1
-cryptography==42.0.4
-PyYAML==5.5
--e git://github.com:sdague/pyRFXtrx.git#egg=RFXtrx
+# Development dependencies
+# Install with: pip install -e ".[dev,docs]"
+#
+# This file is kept for backward compatibility.
+# All dependencies are now defined in pyproject.toml
+
+# Core dev dependencies
+pytest>=7.0
+pytest-cov>=4.0
+fixtures
+mock
+
+# Code quality tools
+flake8>=6.0
+black>=23.0
+isort>=5.0
+mypy>=1.0
+
+# Documentation
+sphinx>=6.0
+sphinx-rtd-theme>=1.0
+
+# Build tools
+build>=0.10
+twine>=4.0
