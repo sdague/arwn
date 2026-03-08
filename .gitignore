@@ -58,3 +58,31 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# Editor backup files
+*~
+*.swp
+*.swo
+*.bak
+.*.swp
+.*.swo
+
+# pytest
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Virtual environments
+.venv/
+.venv*/
+venv*/
+ENV/
+env.bak/
+venv.bak/
