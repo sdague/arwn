@@ -180,7 +180,6 @@ class WeatherUnderground(MQTTAction):
         return (self.temp is not None and
                 self.dewpoint is not None and
                 self.rain is not None and
-                self.pressure is not None and
                 self.winddir is not None and
                 self.windspeed is not None and
                 self.windgust is not None)  # noqa
@@ -218,16 +217,18 @@ class WeatherUnderground(MQTTAction):
             'dewptf': self.dewpoint,
             'humidity': self.humid,
             'dailyrainin': self.rain,
-            'baromin': self.pressure * hpa2inhg,
             'winddir': self.winddir,
             'windspeedmph': self.windspeed,
             'windgustmph': self.windgust
         }
 
+        if self.pressure:
+            data['baromin'] = self.pressure * hpa2inhg
+
         params = urllib.urlencode(data)
         resp = request.urlopen("%s?%s" % (BASEURL, params))
         logger.info("Reported to WUnderground: %(tempf)sF / %(dewptf)sF - "
-                    "%(baromin)sinhg - %(dailyrainin)sin - "
+                    " - %(dailyrainin)sin - "
                     "%(windgustmph)smph / %(windspeedmph)smph %(winddir)s",
                     data)
 
