@@ -21,5 +21,3 @@ sphinx-rtd-theme>=1.0
 # Build tools
 build>=0.10
 twine>=4.0
-
-watchdog>=3.0
