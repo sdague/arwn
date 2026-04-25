@@ -1,6 +1,7 @@
 """Unit tests for SimpleMQTTBroker enhancements."""
 
 import json
+import socket as _socket
 import time
 
 import paho.mqtt.client as mqtt
@@ -82,8 +83,6 @@ def test_empty_retained_clears_topic(broker):
 
 def test_will_published_on_unclean_disconnect(broker):
     """Will message is published when client socket is force-closed."""
-    import socket as _socket
-
     will_received = []
 
     # Observer subscribes to arwn/status before the will fires
@@ -133,6 +132,7 @@ def test_will_not_published_on_clean_disconnect(broker):
     c.loop_start()
     time.sleep(0.15)
     c.disconnect()  # clean disconnect
+    c.loop_stop()
     time.sleep(0.3)
 
     assert "arwn/status" not in broker.retained
