@@ -70,15 +70,19 @@ def test_config_watcher_triggers_reload(mock_collector, mock_mqtt):
         dispatcher = Dispatcher(initial)
         watcher = ConfigWatcher(config_path, dispatcher)
         watcher.start()
+        try:
+            updated = dict(initial)
+            updated["names"] = {"aa:01": "garden"}
+            with open(config_path, "w") as f:
+                yaml.dump(updated, f)
 
-        updated = dict(initial)
-        updated["names"] = {"aa:01": "garden"}
-        with open(config_path, "w") as f:
-            yaml.dump(updated, f)
-
-        time.sleep(1.0)
-
-        watcher.stop()
+            deadline = time.monotonic() + 5.0
+            while time.monotonic() < deadline:
+                if dispatcher.names == {"aa:01": "garden"}:
+                    break
+                time.sleep(0.05)
+        finally:
+            watcher.stop()
 
         assert dispatcher.names == {"aa:01": "garden"}
     finally:

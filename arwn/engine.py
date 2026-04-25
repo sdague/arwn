@@ -438,3 +438,13 @@ class _ConfigFileHandler(FileSystemEventHandler):
             self._dispatcher.reload(config)
         except Exception:
             logger.exception("Failed to reload config from %s", self._config_path)
+
+    def on_moved(self, event):
+        if event.dest_path != self._config_path:
+            return
+        try:
+            with open(self._config_path, "r") as f:
+                config = yaml.safe_load(f)
+            self._dispatcher.reload(config)
+        except Exception:
+            logger.exception("Failed to reload config from %s", self._config_path)
