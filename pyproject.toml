@@ -30,6 +30,7 @@ dependencies = [
     "paho-mqtt>=1.1",
     "pyserial>=3",
     "pid>=2",
+    "watchdog>=3.0",
 ]
 
 [project.optional-dependencies]
