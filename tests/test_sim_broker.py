@@ -78,3 +78,61 @@ def test_empty_retained_clears_topic(broker):
     c.disconnect()
 
     assert "arwn/status" not in broker.retained
+
+
+def test_will_published_on_unclean_disconnect(broker):
+    """Will message is published when client socket is force-closed."""
+    import socket as _socket
+
+    will_received = []
+
+    # Observer subscribes to arwn/status before the will fires
+    obs = mqtt.Client()
+    obs.on_message = lambda c, u, m: will_received.append(
+        (m.topic, json.loads(m.payload))
+    )
+    obs.connect("localhost", broker.port)
+    obs.subscribe("arwn/#")
+    obs.loop_start()
+    time.sleep(0.15)
+
+    # Connect a client with a will
+    victim = mqtt.Client()
+    victim.will_set("arwn/status", json.dumps({"status": "dead"}), retain=True)
+    victim.connect("localhost", broker.port)
+    victim.loop_start()
+    time.sleep(0.15)
+
+    # Force-close without DISCONNECT: shut down socket first, then stop loop
+    try:
+        victim._sock.shutdown(_socket.SHUT_RDWR)
+    except Exception:
+        pass
+    try:
+        victim._sock.close()
+    except Exception:
+        pass
+    victim.loop_stop()
+
+    time.sleep(0.5)
+
+    obs.loop_stop()
+    obs.disconnect()
+
+    assert any(
+        t == "arwn/status" and p.get("status") == "dead" for t, p in will_received
+    ), f"Will not received. Got: {will_received}"
+    assert "arwn/status" in broker.retained
+
+
+def test_will_not_published_on_clean_disconnect(broker):
+    """Will message is NOT published when client disconnects cleanly."""
+    c = mqtt.Client()
+    c.will_set("arwn/status", json.dumps({"status": "dead"}), retain=True)
+    c.connect("localhost", broker.port)
+    c.loop_start()
+    time.sleep(0.15)
+    c.disconnect()  # clean disconnect
+    time.sleep(0.3)
+
+    assert "arwn/status" not in broker.retained

@@ -75,6 +75,7 @@ class SimpleMQTTBroker:
     def _handle_connection(self, conn):
         """Handle a single MQTT connection."""
         try:
+            clean_disconnect = False
             while self.running:
                 # Read fixed header byte
                 data = conn.recv(1)
@@ -85,12 +86,11 @@ class SimpleMQTTBroker:
 
                 # Handle CONNECT packet (type 1)
                 if packet_type == 1:
-                    # Read remaining length
                     remaining = self._read_remaining_length(conn)
-                    # Read the rest of the CONNECT packet
-                    if remaining > 0:
-                        conn.recv(remaining)
-                    # Send CONNACK (successful connection)
+                    connect_data = conn.recv(remaining) if remaining > 0 else b""
+                    will = self._parse_will(connect_data)
+                    if will:
+                        self.wills[conn] = will
                     connack = struct.pack("!BBBB", 0x20, 0x02, 0x00, 0x00)
                     conn.send(connack)
 
@@ -198,11 +198,20 @@ class SimpleMQTTBroker:
                 # Handle DISCONNECT packet (type 14)
                 elif packet_type == 14:
                     self._read_remaining_length(conn)  # drain 0x00
+                    clean_disconnect = True
                     break
 
         except Exception:
             pass
         finally:
+            if not clean_disconnect:
+                will = self.wills.pop(conn, None)
+                if will:
+                    self._route_message(
+                        will.topic, will.payload, conn, retain=will.retain, qos=will.qos
+                    )
+            else:
+                self.wills.pop(conn, None)
             try:
                 conn.close()
             except Exception:
@@ -222,6 +231,45 @@ class SimpleMQTTBroker:
                 break
             multiplier *= 128
         return value
+
+    def _parse_will(self, connect_data):
+        """Parse will from CONNECT payload. Returns WillMessage or None."""
+        try:
+            proto_len = struct.unpack("!H", connect_data[:2])[0]
+            offset = 2 + proto_len  # skip protocol name bytes
+            offset += 1  # skip protocol level
+            connect_flags = connect_data[offset]
+            offset += 1  # skip connect flags
+            offset += 2  # skip keep-alive
+
+            will_flag = bool(connect_flags & 0x04)
+            will_qos = (connect_flags >> 3) & 0x03
+            will_retain = bool(connect_flags & 0x20)
+
+            # skip client ID
+            client_id_len = struct.unpack("!H", connect_data[offset : offset + 2])[0]
+            offset += 2 + client_id_len
+
+            if not will_flag:
+                return None
+
+            will_topic_len = struct.unpack("!H", connect_data[offset : offset + 2])[0]
+            offset += 2
+            will_topic = connect_data[offset : offset + will_topic_len].decode("utf-8")
+            offset += will_topic_len
+
+            will_payload_len = struct.unpack("!H", connect_data[offset : offset + 2])[0]
+            offset += 2
+            will_payload = connect_data[offset : offset + will_payload_len]
+
+            return WillMessage(
+                topic=will_topic,
+                payload=will_payload,
+                retain=will_retain,
+                qos=will_qos,
+            )
+        except Exception:
+            return None
 
     def _topic_matches(self, topic_filter, topic):
         """Check if a topic matches a topic filter (with wildcards)."""
