@@ -12,7 +12,7 @@ import os
 import sys
 import tempfile
 from unittest import mock
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 import yaml
@@ -40,8 +40,8 @@ def make_minimal_config():
     }
 
 
-@patch("arwn.cmd.collect.engine.ConfigWatcher")
-@patch("arwn.cmd.collect.engine.Dispatcher")
+@mock.patch("arwn.cmd.collect.engine.ConfigWatcher")
+@mock.patch("arwn.cmd.collect.engine.Dispatcher")
 def test_event_loop_starts_config_watcher(mock_dispatcher_cls, mock_watcher_cls):
     from arwn.cmd.collect import event_loop
 
@@ -65,5 +65,6 @@ def test_event_loop_starts_config_watcher(mock_dispatcher_cls, mock_watcher_cls)
 
         mock_watcher_cls.assert_called_once_with(config_path, mock_dispatcher)
         mock_watcher.start.assert_called_once()
+        mock_watcher.stop.assert_called_once()
     finally:
         os.unlink(config_path)
