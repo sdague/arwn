@@ -1,11 +1,71 @@
 """Pytest configuration and fixtures."""
 
 import os
+import re
 import subprocess
 import time
+from dataclasses import dataclass
+from typing import Union
 
 import paho.mqtt.client as mqtt
 import pytest
+
+from tests.mqtt_broker import ReceivedMessage, SimpleMQTTBroker
+
+
+@dataclass
+class SimBrokerHandle:
+    host: str
+    port: int
+    broker: SimpleMQTTBroker
+
+
+@pytest.fixture(scope="module")
+def sim_broker():
+    """Start a SimpleMQTTBroker for the test module. One broker per module."""
+    broker = SimpleMQTTBroker()
+    broker.start()
+    yield SimBrokerHandle(host="localhost", port=broker.port, broker=broker)
+    broker.stop()
+
+
+@pytest.fixture(autouse=False)
+def sim_broker_clean(sim_broker):
+    """Reset broker message and retained state before each test."""
+    sim_broker.broker.messages.clear()
+    sim_broker.broker.retained.clear()
+    yield
+
+
+def wait_for_message(
+    broker: SimpleMQTTBroker,
+    pattern: Union[str, "re.Pattern"],
+    timeout: float = 2.0,
+) -> ReceivedMessage:
+    """Poll broker.messages until a message matching pattern arrives.
+
+    pattern: str      → topic prefix match (topic.startswith(pattern))
+    pattern: re.Pattern → regex match against topic
+
+    Raises TimeoutError if no match within timeout seconds.
+    """
+    import time as _time
+
+    deadline = _time.monotonic() + timeout
+    while _time.monotonic() < deadline:
+        with broker._messages_lock:
+            for msg in broker.messages:
+                if isinstance(pattern, str):
+                    if msg.topic.startswith(pattern):
+                        return msg
+                else:
+                    if pattern.search(msg.topic):
+                        return msg
+        _time.sleep(0.05)
+    raise TimeoutError(
+        f"No message matching {pattern!r} arrived within {timeout}s. "
+        f"Topics seen: {[m.topic for m in broker.messages]}"
+    )
 
 
 @pytest.fixture
