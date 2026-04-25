@@ -54,9 +54,14 @@ def setup_logger(logfile=None):
     return fh, logger
 
 
-def event_loop(config):
+def event_loop(config, config_path):
     dispatcher = engine.Dispatcher(config)
-    dispatcher.loopforever()
+    watcher = engine.ConfigWatcher(config_path, dispatcher)
+    watcher.start()
+    try:
+        dispatcher.loopforever()
+    finally:
+        watcher.stop()
 
 
 def main():
@@ -70,10 +75,10 @@ def main():
                 pidfile=pid.PidFile("arwn", args.piddir),
             ):
                 logger.debug("Starting arwn in daemon mode")
-                event_loop(config)
+                event_loop(config, args.config)
         except Exception:
             logger.exception("Something went wrong!")
     else:
         fh, logger = setup_logger()
         logger.debug("Starting arwn in foreground")
-        event_loop(config)
+        event_loop(config, args.config)
