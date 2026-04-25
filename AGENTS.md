@@ -14,13 +14,20 @@ pip install -e ".[dev]"
 Run the full test suite before committing:
 
 ```bash
-pytest
+tox -e py314
+```
+
+Run a single test file or individual test:
+
+```bash
+tox -e py314 -- tests/test_handlers.py
+tox -e py314 -- tests/test_handlers.py::TestClass::test_method
 ```
 
 With coverage:
 
 ```bash
-pytest --cov=arwn --cov-report=html
+tox -e coverage
 ```
 
 ## Linting
@@ -28,8 +35,7 @@ pytest --cov=arwn --cov-report=html
 Run both checks before committing:
 
 ```bash
-black --check arwn tests
-isort --check-only arwn tests
+tox -e lint
 ```
 
 To auto-fix:
