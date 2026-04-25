@@ -15,6 +15,7 @@
 import json
 import logging
 import subprocess
+import threading
 import time
 
 import paho.mqtt.client as paho
@@ -318,12 +319,19 @@ class RTL433Collector(object):
 
 class Dispatcher(object):
     def __init__(self, config):
+        self._names_lock = threading.Lock()
         self._get_collector(config)
         self.names = config["names"]
         server = config["mqtt"]["server"]
         self.mqtt = MQTT(server, config)
         self.config = config
         logger.debug("Config => %s", self.config)
+
+    def reload(self, config):
+        with self._names_lock:
+            self.names = config["names"]
+            count = len(self.names)
+        logger.info("Config reloaded: %d sensor names loaded", count)
 
     def _get_collector(self, config):
         col = config.get("collector")
@@ -364,7 +372,8 @@ class Dispatcher(object):
                     )
                     continue
 
-                name = self.names.get(packet.sensor_id)
+                with self._names_lock:
+                    name = self.names.get(packet.sensor_id)
                 if name:
                     topic = "moisture/%s" % name
                     self.mqtt.send(topic, packet.as_json(units=".", timestamp=now))
@@ -378,7 +387,8 @@ class Dispatcher(object):
                     )
                     continue
 
-                name = self.names.get(packet.sensor_id)
+                with self._names_lock:
+                    name = self.names.get(packet.sensor_id)
                 if name:
                     topic = "temperature/%s" % name
                 else:
