@@ -26,6 +26,8 @@ from arwn.vendor.RFXtrx.pyserial import PySerialTransport
 
 logger = logging.getLogger(__name__)
 
+MM2IN = 0.03937008
+
 IS_NONE = 0
 IS_TEMP = 1 << 0
 IS_BARO = 1 << 1
@@ -39,7 +41,7 @@ IS_MOIST = 1 << 5
 TH_SENSORS = ("THGR810", "THGR122N", "BHTR968")
 MOIST_SENSORS = ("Springfield Temperature & Moisture")
 WIND_SENSORS = ("WGR800")
-RAIN_SENSORS = ("PCR800")
+RAIN_SENSORS = ("Acurite-Rain899")
 BARO_SENSORS = ("BHTR968")
 
 MAX_TEMP = 150
@@ -139,8 +141,11 @@ class SensorPacket(object):
             self.data['pressure'] = data['pressure_hPa']
         if self.stype & IS_RAIN:
             # rtl_433 already converts to non metric here
-            self.data['total'] = round(data['rain_in'], 2)
-            self.data['rate'] = round(data['rain_rate_in_h'], 2)
+            if 'rain_mm' in data:
+                self.data['total'] = round(data['rain_mm'] * MM2IN, 3)
+            else:
+                self.data['total'] = round(data['rain_in'], 2)
+                self.data['rate'] = round(data['rain_rate_in_h'], 2)
             self.data['units'] = 'in'
         if self.stype & IS_WIND:
             mps2mph = 2.23694
@@ -191,6 +196,11 @@ class MQTT(object):
         self.port = port
         self.config = config
         self.root = config["mqtt"].get("root", "arwn")
+        self.user = config["mqtt"].get("user")
+        self.passwd = config["mqtt"].get("passwd")
+        if (self.user and self.passwd):
+            client.username_pw_set(self.user, self.passwd)
+
         self.status_topic = "%s/status" % self.root
 
         def on_connect(client, userdata, flags, rc):
@@ -205,6 +215,10 @@ class MQTT(object):
             payload = json.loads(msg.payload)
             handlers.run(self, msg.topic, payload)
             return True
+
+        if config["mqtt"].get("username") and config["mqtt"].get("password"):
+            client.username_pw_set(config["mqtt"]["username"],
+                                   config["mqtt"]["password"])
 
         status_dead = {'status': 'dead'}
         client.will_set(self.status_topic,
@@ -235,7 +249,7 @@ class RFXCOMCollector(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         try:
             event = self.transport.receive_blocking()
             self.unparsable = 0
@@ -254,6 +268,7 @@ class RFXCOMCollector(object):
 
 class RTL433Collector(object):
     def __init__(self, devices=None):
+        global RAIN_SENSORS
         cmd = ["rtl_433", "-F", "json"]
         logger.error(devices)
         logger.error(type(devices))
@@ -269,7 +284,7 @@ class RTL433Collector(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         line = self.rtl.stdout.readline()
         data = json.loads(line)
         self.log_data(data)
@@ -367,7 +382,9 @@ class Dispatcher(object):
                         timestamp=now))
 
             if packet.is_temp:
-                if packet.data['temp'] > MAX_TEMP or packet.data['temp'] < MIN_TEMP:
+                if (packet.data['temp'] > MAX_TEMP or
+                    packet.data['temp'] < MIN_TEMP):
+
                     logger.warn(
                         "Packet temp data makes no sense: %s => %s" %
                         (packet, packet.as_json()))
