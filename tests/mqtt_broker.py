@@ -3,13 +3,12 @@ Simplified MQTT broker for testing.
 Based on paho-mqtt test broker but with minimal dependencies.
 """
 
-import json
 import socket
 import struct
 import threading
 import time
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from dataclasses import dataclass
+from typing import Dict, List
 
 
 @dataclass
