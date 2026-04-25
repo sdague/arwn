@@ -76,8 +76,8 @@ class SimpleMQTTBroker:
         """Handle a single MQTT connection."""
         try:
             while self.running:
-                # Read packet type and length
-                data = conn.recv(2)
+                # Read fixed header byte
+                data = conn.recv(1)
                 if not data:
                     break
 
@@ -96,18 +96,35 @@ class SimpleMQTTBroker:
 
                 # Handle PUBLISH packet (type 3)
                 elif packet_type == 3:
-                    # Read remaining length
+                    retain_flag = bool(data[0] & 0x01)
+                    qos_val = (data[0] >> 1) & 0x03
                     remaining = self._read_remaining_length(conn)
                     if remaining > 0:
                         publish_data = conn.recv(remaining)
-                        # Parse topic from publish packet
                         if len(publish_data) >= 2:
                             topic_len = struct.unpack("!H", publish_data[:2])[0]
                             if len(publish_data) >= 2 + topic_len:
                                 topic = publish_data[2 : 2 + topic_len].decode("utf-8")
-                                payload = publish_data[2 + topic_len :]
-                                # Route to subscribers
-                                self._route_message(topic, payload, conn)
+                                offset = 2 + topic_len
+                                # Skip packet ID for QoS 1/2
+                                if qos_val > 0:
+                                    packet_id = struct.unpack(
+                                        "!H", publish_data[offset : offset + 2]
+                                    )[0]
+                                    offset += 2
+                                else:
+                                    packet_id = None
+                                payload = publish_data[offset:]
+                                self._route_message(
+                                    topic, payload, conn, retain_flag, qos_val
+                                )
+                                # Send PUBACK for QoS 1 or 2
+                                if qos_val >= 1 and packet_id is not None:
+                                    puback = struct.pack("!BBH", 0x40, 0x02, packet_id)
+                                    try:
+                                        conn.send(puback)
+                                    except Exception:
+                                        pass
 
                 # Handle SUBSCRIBE packet (type 8)
                 elif packet_type == 8:
@@ -131,15 +148,46 @@ class SimpleMQTTBroker:
                         # Send SUBACK
                         suback = struct.pack("!BBHB", 0x90, 0x03, packet_id, 0x00)
                         conn.send(suback)
+                        # Replay matching retained messages
+                        for ret_topic, ret_payload in list(self.retained.items()):
+                            if self._topic_matches(topic_filter, ret_topic):
+                                ret_topic_bytes = ret_topic.encode("utf-8")
+                                ret_topic_len_bytes = struct.pack(
+                                    "!H", len(ret_topic_bytes)
+                                )
+                                # Set retain bit in fixed header: 0x31
+                                rem_len = 2 + len(ret_topic_bytes) + len(ret_payload)
+                                rem_bytes = []
+                                while True:
+                                    byte = rem_len % 128
+                                    rem_len = rem_len // 128
+                                    if rem_len > 0:
+                                        byte |= 0x80
+                                    rem_bytes.append(byte)
+                                    if rem_len == 0:
+                                        break
+                                retained_packet = (
+                                    bytes([0x31])
+                                    + bytes(rem_bytes)
+                                    + ret_topic_len_bytes
+                                    + ret_topic_bytes
+                                    + ret_payload
+                                )
+                                try:
+                                    conn.send(retained_packet)
+                                except Exception:
+                                    pass
 
                 # Handle PINGREQ packet (type 12)
                 elif packet_type == 12:
+                    self._read_remaining_length(conn)  # drain 0x00
                     # Send PINGRESP
                     pingresp = struct.pack("!BB", 0xD0, 0x00)
                     conn.send(pingresp)
 
                 # Handle DISCONNECT packet (type 14)
                 elif packet_type == 14:
+                    self._read_remaining_length(conn)  # drain 0x00
                     break
 
         except Exception:
@@ -190,26 +238,31 @@ class SimpleMQTTBroker:
         # Both must be exhausted for a match (unless filter ends with #)
         return i == len(filter_parts) and j == len(topic_parts)
 
-    def _route_message(self, topic, payload, sender_conn):
+    def _route_message(self, topic, payload, sender_conn, retain=False, qos=0):
         """Route a published message to all matching subscribers."""
+        # Update retained store
+        if retain:
+            if payload:
+                self.retained[topic] = payload
+            else:
+                self.retained.pop(topic, None)
+
+        # Record in inspection list
         with self._messages_lock:
             self.messages.append(
                 ReceivedMessage(
                     topic=topic,
                     payload=payload,
-                    retain=False,
-                    qos=0,
+                    retain=retain,
+                    qos=qos,
                     timestamp=time.monotonic(),
                 )
             )
-        # Build PUBLISH packet
+
+        # Build PUBLISH packet (QoS 0 delivery to subscribers)
         topic_bytes = topic.encode("utf-8")
         topic_len = struct.pack("!H", len(topic_bytes))
-
-        # PUBLISH packet: fixed header + topic length + topic + payload
         remaining_length = 2 + len(topic_bytes) + len(payload)
-
-        # Encode remaining length
         remaining_bytes = []
         while True:
             byte = remaining_length % 128
@@ -219,22 +272,21 @@ class SimpleMQTTBroker:
             remaining_bytes.append(byte)
             if remaining_length == 0:
                 break
-
         publish_packet = (
             bytes([0x30]) + bytes(remaining_bytes) + topic_len + topic_bytes + payload
         )
 
-        # Send to all matching subscribers
+        # Send to all matching subscribers (except sender)
         for conn, filters in list(self.subscriptions.items()):
             if conn == sender_conn:
-                continue  # Don't send back to sender
+                continue
             for topic_filter in filters:
                 if self._topic_matches(topic_filter, topic):
                     try:
                         conn.send(publish_packet)
                     except Exception:
                         pass
-                    break  # Only send once per connection
+                    break
 
     def stop(self):
         """Stop the broker."""
