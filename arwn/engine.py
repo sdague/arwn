@@ -14,11 +14,15 @@
 
 import json
 import logging
+import os
 import subprocess
 import threading
 import time
 
 import paho.mqtt.client as paho
+import yaml
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
 from arwn import handlers, temperature
 from arwn.vendor.RFXtrx import lowlevel as ll
@@ -400,3 +404,37 @@ class Dispatcher(object):
 
             if packet.is_rain:
                 self.mqtt.send("rain", packet.as_json(timestamp=now))
+
+
+class ConfigWatcher:
+    def __init__(self, config_path, dispatcher):
+        self._config_path = os.path.abspath(config_path)
+        self._dispatcher = dispatcher
+        self._observer = Observer()
+        handler = _ConfigFileHandler(self._config_path, self._dispatcher)
+        watch_dir = os.path.dirname(self._config_path)
+        self._observer.schedule(handler, watch_dir, recursive=False)
+
+    def start(self):
+        self._observer.start()
+        logger.info("Watching %s for changes", self._config_path)
+
+    def stop(self):
+        self._observer.stop()
+        self._observer.join()
+
+
+class _ConfigFileHandler(FileSystemEventHandler):
+    def __init__(self, config_path, dispatcher):
+        self._config_path = config_path
+        self._dispatcher = dispatcher
+
+    def on_modified(self, event):
+        if event.src_path != self._config_path:
+            return
+        try:
+            with open(self._config_path, "r") as f:
+                config = yaml.safe_load(f)
+            self._dispatcher.reload(config)
+        except Exception:
+            logger.exception("Failed to reload config from %s", self._config_path)
