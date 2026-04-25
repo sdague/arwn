@@ -34,6 +34,7 @@ def sim_broker_clean(sim_broker):
     """Reset broker message and retained state before each test."""
     sim_broker.broker.messages.clear()
     sim_broker.broker.retained.clear()
+    sim_broker.broker.wills.clear()
     yield
 
 
@@ -49,10 +50,8 @@ def wait_for_message(
 
     Raises TimeoutError if no match within timeout seconds.
     """
-    import time as _time
-
-    deadline = _time.monotonic() + timeout
-    while _time.monotonic() < deadline:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
         with broker._messages_lock:
             for msg in broker.messages:
                 if isinstance(pattern, str):
@@ -61,10 +60,12 @@ def wait_for_message(
                 else:
                     if pattern.search(msg.topic):
                         return msg
-        _time.sleep(0.05)
+        time.sleep(0.05)
+    with broker._messages_lock:
+        topics = [m.topic for m in broker.messages]
     raise TimeoutError(
         f"No message matching {pattern!r} arrived within {timeout}s. "
-        f"Topics seen: {[m.topic for m in broker.messages]}"
+        f"Topics seen: {topics}"
     )
 
 
