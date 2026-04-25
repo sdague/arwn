@@ -118,11 +118,17 @@ class SimpleMQTTBroker:
                                 self._route_message(
                                     topic, payload, conn, retain_flag, qos_val
                                 )
-                                # Send PUBACK for QoS 1 or 2
-                                if qos_val >= 1 and packet_id is not None:
+                                # Send PUBACK for QoS 1, PUBREC for QoS 2
+                                if qos_val == 1 and packet_id is not None:
                                     puback = struct.pack("!BBH", 0x40, 0x02, packet_id)
                                     try:
                                         conn.send(puback)
+                                    except Exception:
+                                        pass
+                                elif qos_val == 2 and packet_id is not None:
+                                    pubrec = struct.pack("!BBH", 0x50, 0x02, packet_id)
+                                    try:
+                                        conn.send(pubrec)
                                     except Exception:
                                         pass
 
@@ -145,38 +151,42 @@ class SimpleMQTTBroker:
                                 if conn not in self.subscriptions:
                                     self.subscriptions[conn] = []
                                 self.subscriptions[conn].append(topic_filter)
+                                # Replay matching retained messages
+                                for ret_topic, ret_payload in list(
+                                    self.retained.items()
+                                ):
+                                    if self._topic_matches(topic_filter, ret_topic):
+                                        ret_topic_bytes = ret_topic.encode("utf-8")
+                                        ret_topic_len_bytes = struct.pack(
+                                            "!H", len(ret_topic_bytes)
+                                        )
+                                        # Set retain bit in fixed header: 0x31
+                                        rem_len = (
+                                            2 + len(ret_topic_bytes) + len(ret_payload)
+                                        )
+                                        rem_bytes = []
+                                        while True:
+                                            byte = rem_len % 128
+                                            rem_len = rem_len // 128
+                                            if rem_len > 0:
+                                                byte |= 0x80
+                                            rem_bytes.append(byte)
+                                            if rem_len == 0:
+                                                break
+                                        retained_packet = (
+                                            bytes([0x31])
+                                            + bytes(rem_bytes)
+                                            + ret_topic_len_bytes
+                                            + ret_topic_bytes
+                                            + ret_payload
+                                        )
+                                        try:
+                                            conn.send(retained_packet)
+                                        except Exception:
+                                            pass
                         # Send SUBACK
                         suback = struct.pack("!BBHB", 0x90, 0x03, packet_id, 0x00)
                         conn.send(suback)
-                        # Replay matching retained messages
-                        for ret_topic, ret_payload in list(self.retained.items()):
-                            if self._topic_matches(topic_filter, ret_topic):
-                                ret_topic_bytes = ret_topic.encode("utf-8")
-                                ret_topic_len_bytes = struct.pack(
-                                    "!H", len(ret_topic_bytes)
-                                )
-                                # Set retain bit in fixed header: 0x31
-                                rem_len = 2 + len(ret_topic_bytes) + len(ret_payload)
-                                rem_bytes = []
-                                while True:
-                                    byte = rem_len % 128
-                                    rem_len = rem_len // 128
-                                    if rem_len > 0:
-                                        byte |= 0x80
-                                    rem_bytes.append(byte)
-                                    if rem_len == 0:
-                                        break
-                                retained_packet = (
-                                    bytes([0x31])
-                                    + bytes(rem_bytes)
-                                    + ret_topic_len_bytes
-                                    + ret_topic_bytes
-                                    + ret_payload
-                                )
-                                try:
-                                    conn.send(retained_packet)
-                                except Exception:
-                                    pass
 
                 # Handle PINGREQ packet (type 12)
                 elif packet_type == 12:
