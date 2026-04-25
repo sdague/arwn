@@ -133,6 +133,7 @@ persistence true
 persistence_location {tmp_path}
 log_dest file {tmp_path}/mosquitto.log
 listener {port}
+allow_anonymous true
 """)
 
     # Start mosquitto

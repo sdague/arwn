@@ -36,8 +36,15 @@ def test_mqtt_fixture(mosquitto_real):
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_message = on_message
-    client.connect("localhost", mosquitto_real)
+    _, port = mosquitto_real
+    client.connect("localhost", port)
     client.loop_start()
+
+    # Wait for connection before publishing
+    start = time.time()
+    while not connected and (time.time() - start) < 5:
+        time.sleep(0.1)
+
     client.publish("foo/start", "foo", retain=True)
 
     # Wait for message with timeout
@@ -45,7 +52,6 @@ def test_mqtt_fixture(mosquitto_real):
     start = time.time()
     while not done and (time.time() - start) < timeout:
         time.sleep(0.1)
-        client.loop_read()
 
     client.loop_stop()
     client.disconnect()
@@ -60,8 +66,9 @@ def test_mqtt_disconnect(mosquitto_real):
     """Test MQTT disconnect and reconnect behavior."""
     received = []
 
+    _, port = mosquitto_real
     config = dict(mqtt={})
-    mq = engine.MQTT("localhost", config, port=mosquitto_real)
+    mq = engine.MQTT("localhost", config, port=port)
 
     def on_connect(client, userdata, flags, rc):
         client.subscribe("%s/#" % mq.root, qos=2)
@@ -75,8 +82,13 @@ def test_mqtt_disconnect(mosquitto_real):
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_message = on_message
-    client.connect("localhost", mosquitto_real)
+    client.connect("localhost", port)
     client.loop_start()
+
+    # Wait for the engine client to connect before force-closing its socket
+    start = time.time()
+    while not mq.client.is_connected() and (time.time() - start) < 5:
+        time.sleep(0.1)
 
     # force a failure, this triggers the will. We have to force a
     # sleep before the socket close otherwise the will can
