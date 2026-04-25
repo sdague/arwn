@@ -330,7 +330,7 @@ class Dispatcher(object):
     def reload(self, config):
         with self._names_lock:
             self.names = config["names"]
-            count = len(self.names)
+        count = len(self.names)
         logger.info("Config reloaded: %d sensor names loaded", count)
 
     def _get_collector(self, config):
