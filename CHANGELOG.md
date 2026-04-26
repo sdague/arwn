@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [2.1.0] - 2026-04-26
 
 * Fix `arwn-install-service` to use lazy default for `--config` argument
 * Fix `test_install_service_binary_not_found` to assert no unit file is written
