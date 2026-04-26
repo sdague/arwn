@@ -6,14 +6,16 @@ import pytest
 
 
 def test_install_service_happy_path(tmp_path):
-    unit_dir = tmp_path / ".config" / "systemd" / "user"
     config_path = str(tmp_path / ".config" / "arwn" / "config.yml")
 
     with (
-        patch("shutil.which", return_value="/usr/bin/arwn-collect"),
+        patch(
+            "arwn.cmd.install_service.shutil.which",
+            return_value="/usr/bin/arwn-collect",
+        ),
         patch("arwn.cmd.install_service.Path.home", return_value=tmp_path),
-        patch("getpass.getuser", return_value="testuser"),
-        patch("subprocess.run") as mock_run,
+        patch("arwn.cmd.install_service.getpass.getuser", return_value="testuser"),
+        patch("arwn.cmd.install_service.subprocess.run") as mock_run,
     ):
         mock_run.return_value = MagicMock(returncode=0)
         from arwn.cmd.install_service import main
@@ -35,8 +37,8 @@ def test_install_service_happy_path(tmp_path):
 
 def test_install_service_binary_not_found(tmp_path, capsys):
     with (
-        patch("shutil.which", return_value=None),
-        patch("subprocess.run") as mock_run,
+        patch("arwn.cmd.install_service.shutil.which", return_value=None),
+        patch("arwn.cmd.install_service.subprocess.run") as mock_run,
     ):
         from arwn.cmd.install_service import main
 
