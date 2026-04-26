@@ -65,10 +65,39 @@ names:
   "e9:00": Living Room
 ```
 
-## Running
+## Running as a systemd service (recommended)
+
+Install and enable the systemd user service:
 
 ```bash
-arwn-collect --config config.yml
+arwn-install-service --config ~/.config/arwn/config.yml
+```
+
+The service will start immediately, start at boot, and restart automatically on
+failure. No `sudo` required.
+
+To check status:
+
+```bash
+systemctl --user status arwn
+journalctl --user -u arwn -f
+```
+
+### RFXCOM USB access
+
+If using an RFXCOM receiver, add yourself to the `dialout` group (one-time):
+
+```bash
+sudo usermod -aG dialout $USER
+```
+
+Log out and back in for the change to take effect, then re-run
+`arwn-install-service`.
+
+## Running manually
+
+```bash
+arwn-collect -f --config config.yml
 ```
 
 ## Development
