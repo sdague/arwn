@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+* Fix `arwn-install-service` to use lazy default for `--config` argument
+* Fix `test_install_service_binary_not_found` to assert no unit file is written
 * Add `arwn-install-service` CLI command to install arwn as a systemd user service
 * Add `SimpleMQTTBroker` in-process MQTT broker for tests — no external mosquitto required
 * Add retained message store and replay support in `SimpleMQTTBroker`

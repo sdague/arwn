@@ -38,6 +38,7 @@ def test_install_service_happy_path(tmp_path):
 def test_install_service_binary_not_found(tmp_path, capsys):
     with (
         patch("arwn.cmd.install_service.shutil.which", return_value=None),
+        patch("arwn.cmd.install_service.Path.home", return_value=tmp_path),
         patch("arwn.cmd.install_service.subprocess.run") as mock_run,
     ):
         with pytest.raises(SystemExit) as exc_info:
@@ -47,3 +48,5 @@ def test_install_service_binary_not_found(tmp_path, capsys):
     captured = capsys.readouterr()
     assert "arwn-collect" in captured.err
     mock_run.assert_not_called()
+    unit_file = tmp_path / ".config" / "systemd" / "user" / "arwn.service"
+    assert not unit_file.exists()

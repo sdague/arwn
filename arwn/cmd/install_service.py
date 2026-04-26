@@ -13,7 +13,7 @@ def main(args=None):
     )
     parser.add_argument(
         "--config",
-        default=str(Path.home() / ".config" / "arwn" / "config.yml"),
+        default=None,
         help="path to arwn config file (default: ~/.config/arwn/config.yml)",
     )
     opts = parser.parse_args(args)
@@ -26,7 +26,8 @@ def main(args=None):
         )
         sys.exit(1)
 
-    config = str(Path(opts.config).expanduser().resolve())
+    config_raw = opts.config or str(Path.home() / ".config" / "arwn" / "config.yml")
+    config = str(Path(config_raw).expanduser().resolve())
 
     template = (
         files("arwn.data").joinpath("arwn.service.template").read_text(encoding="utf-8")
