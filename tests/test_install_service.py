@@ -4,6 +4,8 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 
+from arwn.cmd.install_service import main
+
 
 def test_install_service_happy_path(tmp_path):
     config_path = str(tmp_path / ".config" / "arwn" / "config.yml")
@@ -18,8 +20,6 @@ def test_install_service_happy_path(tmp_path):
         patch("arwn.cmd.install_service.subprocess.run") as mock_run,
     ):
         mock_run.return_value = MagicMock(returncode=0)
-        from arwn.cmd.install_service import main
-
         main(["--config", config_path])
 
     unit_file = tmp_path / ".config" / "systemd" / "user" / "arwn.service"
@@ -40,8 +40,6 @@ def test_install_service_binary_not_found(tmp_path, capsys):
         patch("arwn.cmd.install_service.shutil.which", return_value=None),
         patch("arwn.cmd.install_service.subprocess.run") as mock_run,
     ):
-        from arwn.cmd.install_service import main
-
         with pytest.raises(SystemExit) as exc_info:
             main([])
 
