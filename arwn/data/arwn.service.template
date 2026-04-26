@@ -1,0 +1,10 @@
+[Unit]
+Description=ARWN Collector
+
+[Service]
+ExecStart={arwn_collect} -f -c {config}
+Type=simple
+Restart=always
+
+[Install]
+WantedBy=default.target
