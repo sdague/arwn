@@ -146,7 +146,7 @@ allow_anonymous true
     # Wait for mosquitto to be ready
     for _ in range(100):
         try:
-            c = mqtt.Client()
+            c = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
             c.connect("localhost", port)
             c.disconnect()
             break

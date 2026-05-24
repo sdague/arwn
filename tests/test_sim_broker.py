@@ -20,7 +20,7 @@ def broker():
 
 def connect_client(port):
     """Return a connected, looping paho client."""
-    c = mqtt.Client()
+    c = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
     c.connect("localhost", port)
     c.loop_start()
     time.sleep(0.15)
@@ -54,7 +54,7 @@ def test_retained_message_replayed_on_subscribe(broker):
     def on_message(client, userdata, msg):
         received.append((msg.topic, json.loads(msg.payload)))
 
-    sub = mqtt.Client()
+    sub = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
     sub.on_message = on_message
     sub.connect("localhost", broker.port)
     sub.subscribe("arwn/#")
@@ -86,7 +86,7 @@ def test_will_published_on_unclean_disconnect(broker):
     will_received = []
 
     # Observer subscribes to arwn/status before the will fires
-    obs = mqtt.Client()
+    obs = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
     obs.on_message = lambda c, u, m: will_received.append(
         (m.topic, json.loads(m.payload))
     )
@@ -96,7 +96,7 @@ def test_will_published_on_unclean_disconnect(broker):
     time.sleep(0.15)
 
     # Connect a client with a will
-    victim = mqtt.Client()
+    victim = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
     victim.will_set("arwn/status", json.dumps({"status": "dead"}), retain=True)
     victim.connect("localhost", broker.port)
     victim.loop_start()
@@ -126,7 +126,7 @@ def test_will_published_on_unclean_disconnect(broker):
 
 def test_will_not_published_on_clean_disconnect(broker):
     """Will message is NOT published when client disconnects cleanly."""
-    c = mqtt.Client()
+    c = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
     c.will_set("arwn/status", json.dumps({"status": "dead"}), retain=True)
     c.connect("localhost", broker.port)
     c.loop_start()

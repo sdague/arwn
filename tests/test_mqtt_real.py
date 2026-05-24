@@ -23,7 +23,7 @@ def test_mqtt_fixture(mosquitto_real):
     received = None
     done = False
 
-    def on_connect(client, userdata, flags, rc):
+    def on_connect(client, userdata, connect_flags, reason_code, properties):
         client.subscribe("foo/#")
         nonlocal connected
         connected = True
@@ -33,7 +33,7 @@ def test_mqtt_fixture(mosquitto_real):
         received = message
         done = True
 
-    client = mqtt.Client()
+    client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
     client.on_connect = on_connect
     client.on_message = on_message
     _, port = mosquitto_real
@@ -70,7 +70,7 @@ def test_mqtt_disconnect(mosquitto_real):
     config = dict(mqtt={})
     mq = engine.MQTT("localhost", config, port=port)
 
-    def on_connect(client, userdata, flags, rc):
+    def on_connect(client, userdata, connect_flags, reason_code, properties):
         client.subscribe("%s/#" % mq.root, qos=2)
 
     def on_message(client, userdata, message):
@@ -79,7 +79,7 @@ def test_mqtt_disconnect(mosquitto_real):
         )
         print("Got a message!")
 
-    client = mqtt.Client()
+    client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
     client.on_connect = on_connect
     client.on_message = on_message
     client.connect("localhost", port)

@@ -99,7 +99,7 @@ def test_rain_handler_computes_today_total(sim_broker, sim_broker_clean):
     mq = engine.MQTT("localhost", make_config(sim_broker.port), port=sim_broker.port)
     # Use a separate plain paho client to publish rain messages so the engine's
     # on_message callback receives them (the broker does not echo back to sender).
-    publisher = paho.Client()
+    publisher = paho.Client(callback_api_version=paho.CallbackAPIVersion.VERSION2)
     try:
         # Wait for the engine to connect and process the retained arwn/totals/rain.
         # The engine subscribes to arwn/# on connect; the broker replays retained
@@ -140,7 +140,7 @@ def test_rain_handler_computes_today_total(sim_broker, sim_broker_clean):
 def test_retained_rain_total_replayed_on_reconnect(sim_broker, sim_broker_clean):
     """A retained arwn/totals/rain is replayed to a new subscriber on connect."""
     # Publish a retained message using a plain paho client
-    publisher = paho.Client()
+    publisher = paho.Client(callback_api_version=paho.CallbackAPIVersion.VERSION2)
     publisher.connect("localhost", sim_broker.port)
     publisher.loop_start()
     payload = json.dumps({"total": 3.1, "units": "in", "timestamp": int(time.time())})
@@ -152,7 +152,7 @@ def test_retained_rain_total_replayed_on_reconnect(sim_broker, sim_broker_clean)
 
     # A new subscriber should receive the retained message on connect
     received = []
-    subscriber = paho.Client()
+    subscriber = paho.Client(callback_api_version=paho.CallbackAPIVersion.VERSION2)
 
     def on_message(client, userdata, msg):
         received.append(msg)

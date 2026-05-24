@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+* Migrate paho-mqtt client API to v2 to eliminate deprecation warnings
 * Migrate build backend from setuptools to hatchling
 * Replace tox with uv for local development and CI
 * Add uv.lock lockfile for reproducible installs
