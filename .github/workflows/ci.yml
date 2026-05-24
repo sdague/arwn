@@ -49,7 +49,7 @@ jobs:
         run: uv run pytest tests/ -v --cov=arwn --cov-report=xml --cov-report=term
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         if: matrix.python-version == '3.13'
         with:
           file: ./coverage.xml
