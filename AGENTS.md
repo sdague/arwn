@@ -6,7 +6,7 @@ data via RFXCOM USB receivers or RTL-SDR dongles, then publishes it over MQTT.
 ## Setup
 
 ```bash
-pip install -e ".[dev]"
+uv sync --extra dev
 ```
 
 ## Testing
@@ -14,20 +14,20 @@ pip install -e ".[dev]"
 Run the full test suite before committing:
 
 ```bash
-tox -e py314
+uv run pytest tests/ -v
 ```
 
 Run a single test file or individual test:
 
 ```bash
-tox -e py314 -- tests/test_handlers.py
-tox -e py314 -- tests/test_handlers.py::TestClass::test_method
+uv run pytest tests/test_handlers.py
+uv run pytest tests/test_handlers.py::TestClass::test_method
 ```
 
 With coverage:
 
 ```bash
-tox -e coverage
+uv run pytest --cov=arwn --cov-report=term-missing
 ```
 
 ## Linting
@@ -35,14 +35,15 @@ tox -e coverage
 Run both checks before committing:
 
 ```bash
-tox -e lint
+uv run black --check arwn tests
+uv run isort --check-only arwn tests
 ```
 
 To auto-fix:
 
 ```bash
-black arwn tests
-isort arwn tests
+uv run black arwn tests
+uv run isort arwn tests
 ```
 
 ## Project Structure

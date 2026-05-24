@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "arwn"
@@ -55,16 +55,12 @@ Issues = "https://github.com/sdague/arwn/issues"
 arwn-collect = "arwn.cmd.collect:main"
 arwn-install-service = "arwn.cmd.install_service:main"
 
-[tool.setuptools]
-zip-safe = false
-
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["arwn*"]
-exclude = ["tests*", "docs*", "etc*", "bin*"]
-
-[tool.setuptools.package-data]
-arwn = ["py.typed", "data/*.template"]
+[tool.hatch.build.targets.wheel]
+packages = ["arwn"]
+include = [
+    "arwn/**/*.py",
+    "arwn/data/*.template",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
