@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+* Migrate build backend from setuptools to hatchling
+* Replace tox with uv for local development and CI
+* Add uv.lock lockfile for reproducible installs
+
 ## [2.1.0] - 2026-04-26
 
 * Fix `arwn-install-service` to use lazy default for `--config` argument
