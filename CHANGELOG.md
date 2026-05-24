@@ -5,6 +5,7 @@
 * Migrate build backend from setuptools to hatchling
 * Replace tox with uv for local development and CI
 * Add uv.lock lockfile for reproducible installs
+* Fix test suite blocked by stray pytest-homeassistant-custom-component global plugin
 
 ## [2.1.0] - 2026-04-26
 
