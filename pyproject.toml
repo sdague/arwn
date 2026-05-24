@@ -7,7 +7,7 @@ name = "arwn"
 version = "2.1.0"
 description = "Collect 433Mhz weather sensor data and publish to mqtt"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = "Apache-2.0"
 authors = [
     {name = "Sean Dague", email = "sean@dague.net"}
@@ -18,10 +18,11 @@ classifiers = [
     "Intended Audience :: Developers",
     "Natural Language :: English",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
     "pyyaml>=5.1",
@@ -90,7 +91,7 @@ exclude_lines = [
 
 [tool.ruff]
 line-length = 88
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = ["I"]
@@ -99,7 +100,7 @@ select = ["I"]
 quote-style = "double"
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.10"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
