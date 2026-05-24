@@ -1448,7 +1448,6 @@ class TempHumidBaro(SensorPacket):
 
 
 class RainGauge(SensorPacket):
-
     TYPES = {
         0x01: "RGR126/682/918",
         0x02: "PCR800",
@@ -1511,7 +1510,6 @@ class RainGauge(SensorPacket):
 
 
 class Wind(SensorPacket):
-
     TYPES = {
         0x01: "WTGR800",
         0x02: "WGR800",
@@ -1593,7 +1591,6 @@ class Wind(SensorPacket):
 
 
 class UV(SensorPacket):
-
     TYPES = {0x01: "UVN128, UV138", 0x02: "UVN800", 0x03: "TFA"}
 
     def __init__(self):

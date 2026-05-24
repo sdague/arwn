@@ -14,8 +14,10 @@ from unittest import mock
 
 import pytest
 
-from arwn import engine  # noqa
-from arwn import handlers  # noqa
+from arwn import (
+    engine,  # noqa
+    handlers,  # noqa
+)
 
 
 class FakeClient:

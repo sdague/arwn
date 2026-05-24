@@ -7,6 +7,7 @@
 * Add uv.lock lockfile for reproducible installs
 * Fix test suite blocked by stray pytest-homeassistant-custom-component global plugin
 * Add Dependabot config for weekly pip and GitHub Actions updates
+* Replace black and isort with ruff for formatting and import sorting
 
 ## [2.1.0] - 2026-04-26
 

@@ -44,7 +44,7 @@ def parse_args():
 def setup_logger(logfile=None):
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
-    formatter = logging.Formatter("[%(levelname)s] %(name)s: " "%(message)s")
+    formatter = logging.Formatter("[%(levelname)s] %(name)s: %(message)s")
     if logfile is not None:
         fh = logging.FileHandler(logfile)
     else:

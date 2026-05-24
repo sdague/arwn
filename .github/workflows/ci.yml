@@ -20,11 +20,11 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra dev
 
-      - name: Check black formatting
-        run: uv run black --check arwn tests
+      - name: Check formatting
+        run: uv run ruff format --check arwn tests
 
-      - name: Check isort
-        run: uv run isort --check-only arwn tests
+      - name: Check lint
+        run: uv run ruff check arwn tests
 
   test:
     name: Test Python ${{ matrix.python-version }}

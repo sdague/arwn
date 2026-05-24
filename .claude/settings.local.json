@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python *)",
+      "Bash(python3 *)",
+      "Bash(pip *)",
+      "Bash(tox *)",
+      "Bash(pytest *)",
+      "Bash(black *)",
+      "Bash(isort *)",
+      "Bash(make *)",
+      "Bash(git *)",
+      "Bash(xxd *)",
+      "Bash(mosquitto *)",
+      "Bash(.venv3/bin/*)",
+      "Bash(.tox/*)",
+      "Bash(claude plugins *)",
+      "Bash(claude plugin *)",
+      "Bash(uv --version)",
+      "Bash(uv sync *)",
+      "Bash(uv run *)",
+      "Bash(uv build *)",
+      "Bash(gh run *)",
+      "Skill(update-config)",
+      "Bash(gh pr *)"
+    ]
+  }
+}

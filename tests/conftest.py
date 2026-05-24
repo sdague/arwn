@@ -13,7 +13,6 @@ import pytest
 from tests.mqtt_broker import ReceivedMessage, SimpleMQTTBroker
 
 
-
 @dataclass
 class SimBrokerHandle:
     host: str

@@ -7,7 +7,6 @@ import paho.mqtt.client as mqtt
 
 
 class CaptureStdout(fixtures.Fixture):
-
     def setUp(self):
         super(CaptureStdout, self).setUp()
         self.stdout = fixtures.StringStream("stdout")
@@ -19,7 +18,6 @@ class CaptureStdout(fixtures.Fixture):
 
 
 class SampleConfig(fixtures.Fixture):
-
     def setUp(self):
         super(SampleConfig, self).setUp()
         tmpdir = self.useFixture(fixtures.TempDir()).path
@@ -58,7 +56,6 @@ class MosquittoFail(Exception):
 
 
 class MosquittoReal(fixtures.Fixture):
-
     def _pick_port(self):
         import socket
 
@@ -73,13 +70,16 @@ class MosquittoReal(fixtures.Fixture):
         self._pick_port()
         config = os.path.join(tmpdir, "mqtt.conf")
         with open(config, "w") as f:
-            f.write("""
+            f.write(
+                """
 pid_file %(tmpdir)s/mosquitto.pid
 persistence true
 persistence_location %(tmpdir)s
 log_dest file %(tmpdir)s/mosquitto.log
 listener %(port)d
-""" % {"tmpdir": tmpdir, "port": self.port})
+"""
+                % {"tmpdir": tmpdir, "port": self.port}
+            )
 
         try:
             self.mqtt = subprocess.Popen(["mosquitto", "-c", config])

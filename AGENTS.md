@@ -35,15 +35,15 @@ uv run pytest --cov=arwn --cov-report=term-missing
 Run both checks before committing:
 
 ```bash
-uv run black --check arwn tests
-uv run isort --check-only arwn tests
+uv run ruff format --check arwn tests
+uv run ruff check arwn tests
 ```
 
 To auto-fix:
 
 ```bash
-uv run black arwn tests
-uv run isort arwn tests
+uv run ruff format arwn tests
+uv run ruff check --fix arwn tests
 ```
 
 ## Project Structure

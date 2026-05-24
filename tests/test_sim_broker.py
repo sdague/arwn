@@ -63,9 +63,9 @@ def test_retained_message_replayed_on_subscribe(broker):
     sub.loop_stop()
     sub.disconnect()
 
-    assert any(
-        t == "arwn/totals/rain" for t, _ in received
-    ), f"Retained message not replayed. Received: {received}"
+    assert any(t == "arwn/totals/rain" for t, _ in received), (
+        f"Retained message not replayed. Received: {received}"
+    )
 
 
 def test_empty_retained_clears_topic(broker):
