@@ -6,6 +6,7 @@
 * Replace tox with uv for local development and CI
 * Add uv.lock lockfile for reproducible installs
 * Fix test suite blocked by stray pytest-homeassistant-custom-component global plugin
+* Add Dependabot config for weekly pip and GitHub Actions updates
 
 ## [2.1.0] - 2026-04-26
 
