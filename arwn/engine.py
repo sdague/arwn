@@ -58,7 +58,6 @@ class SensorPacket:
     """Convert RFXtrx packet to native packet for ARWN"""
 
     def _set_type(self, packet):
-        logger.debug("Type: %d", self.stype)
 
         if self.stype != IS_NONE:
             return
@@ -226,7 +225,7 @@ class MQTT:
 
     def send(self, topic, payload, retain=False):
         topic = "%s/%s" % (self.root, topic)
-        logger.debug("Sending %s => %s", topic, payload)
+        logger.info("Sending %s => %s", topic, payload)
         self.client.publish(topic, json.dumps(payload), retain=retain)
 
 
@@ -345,8 +344,6 @@ class Dispatcher:
             if packet is None:
                 continue
             now = int(time.time())
-
-            logger.debug("%s", packet)
 
             # we send barometer sensors twice
             if packet.is_baro:
