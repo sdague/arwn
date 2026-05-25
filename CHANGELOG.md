@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+### Breaking
+
+* Remove daemon mode — `arwn-collect` now runs in the foreground only.
+  The `-f`, `-l`, and `-p` flags are removed. Use systemd for service management
+  (install via `arwn-install-service`).
+* Remove `python-daemon` and `pid` dependencies.
+* Remove legacy SysV init script (`etc/arwn-daemon`).
+
+### Added
+
+* SensorPacket test coverage (18 tests covering all sensor types).
+
 ## [3.0.0] - 2026-05-25
 
 * Add `Config` dataclass with typed attribute access and `from_dict()` factory

@@ -21,14 +21,14 @@ from arwn.config import Config
 
 
 @mock.patch("arwn.cmd.collect.event_loop")
-def test_start_in_forground(evloop, sample_config, capsys):
-    """Test starting arwn in foreground mode."""
-    testargs = ["collect", "-f", "-c", sample_config]
+def test_start(evloop, sample_config, capsys):
+    """Test starting arwn."""
+    testargs = ["collect", "-c", sample_config]
     with mock.patch.object(sys, "argv", testargs):
         collect.main()
 
     captured = capsys.readouterr()
-    assert "[DEBUG] root: Starting arwn in foreground" in captured.out
+    assert "[DEBUG] root: Starting arwn" in captured.out
     assert evloop.called, "Eventloop not called"
 
 

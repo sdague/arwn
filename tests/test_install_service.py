@@ -23,7 +23,7 @@ def test_install_service_happy_path(tmp_path):
     unit_file = tmp_path / ".config" / "systemd" / "user" / "arwn.service"
     assert unit_file.exists()
     content = unit_file.read_text()
-    assert "ExecStart=/usr/bin/arwn-collect -f -c " + config_path in content
+    assert "ExecStart=/usr/bin/arwn-collect -c " + config_path in content
     assert "WantedBy=default.target" in content
 
     assert mock_run.call_args_list == [

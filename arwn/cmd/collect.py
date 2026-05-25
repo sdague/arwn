@@ -19,8 +19,6 @@ import logging
 import os
 import sys
 
-import daemon
-import pid
 import yaml
 
 from arwn import engine
@@ -29,32 +27,18 @@ from arwn.config import Config
 
 def parse_args():
     parser = argparse.ArgumentParser("arwn")
-    parser.add_argument(
-        "-f",
-        "--foreground",
-        help="run in foreground (don't daemonize)",
-        action="store_true",
-        default=False,
-    )
     parser.add_argument("-c", "--config", help="config file name", default="config.yml")
-    parser.add_argument("-l", "--logfile", help="log file name", default="arwn.log")
-    parser.add_argument(
-        "-p", "--piddir", help="pid file directory", default=os.getcwd()
-    )
     return parser.parse_args()
 
 
-def setup_logger(logfile=None):
+def setup_logger():
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter("[%(levelname)s] %(name)s: %(message)s")
-    if logfile is not None:
-        fh = logging.FileHandler(logfile)
-    else:
-        fh = logging.StreamHandler(sys.stdout)
+    fh = logging.StreamHandler(sys.stdout)
     fh.setFormatter(formatter)
     logger.addHandler(fh)
-    return fh, logger
+    return logger
 
 
 def event_loop(config, config_path):
@@ -72,18 +56,6 @@ def main():
     with open(args.config, "r") as f:
         config = Config.from_dict(yaml.safe_load(f))
     config_path = os.path.abspath(args.config)
-    if not args.foreground:
-        fh, logger = setup_logger(config.logfile or args.logfile)
-        try:
-            with daemon.DaemonContext(
-                files_preserve=[fh.stream, sys.stdout],
-                pidfile=pid.PidFile("arwn", args.piddir),
-            ):
-                logger.debug("Starting arwn in daemon mode")
-                event_loop(config, config_path)
-        except Exception:
-            logger.exception("Something went wrong!")
-    else:
-        fh, logger = setup_logger()
-        logger.debug("Starting arwn in foreground")
-        event_loop(config, config_path)
+    logger = setup_logger()
+    logger.debug("Starting arwn")
+    event_loop(config, config_path)

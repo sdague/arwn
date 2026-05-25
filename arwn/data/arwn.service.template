@@ -2,7 +2,7 @@
 Description=ARWN Collector
 
 [Service]
-ExecStart={arwn_collect} -f -c {config}
+ExecStart={arwn_collect} -c {config}
 Type=simple
 Restart=always
 SyslogIdentifier=arwn
