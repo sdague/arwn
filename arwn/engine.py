@@ -191,7 +191,7 @@ class SensorPacket(object):
 
 class MQTT(object):
     def __init__(self, server, config, port=1883):
-        client = paho.Client()
+        client = paho.Client(callback_api_version=paho.CallbackAPIVersion.VERSION2)
         handlers.setup()
         self.server = server
         self.port = port
@@ -203,7 +203,7 @@ class MQTT(object):
         if self.user and self.passwd:
             client.username_pw_set(self.user, self.passwd)
 
-        def on_connect(client, userdata, flags, rc):
+        def on_connect(client, userdata, connect_flags, reason_code, properties):
             status = {"status": "alive", "timestamp": int(time.time())}
             client.subscribe("%s/#" % self.root)
             client.publish(self.status_topic, json.dumps(status), qos=2, retain=True)

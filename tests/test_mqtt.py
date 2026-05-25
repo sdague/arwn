@@ -32,12 +32,12 @@ def test_mqtt_basic_connection(mqtt_broker):
     """Test basic MQTT connection with real client and test broker."""
     connected = False
 
-    def on_connect(client, userdata, flags, rc):
+    def on_connect(client, userdata, connect_flags, reason_code, properties):
         nonlocal connected
         connected = True
 
     # Create client and connect
-    client = mqtt.Client()
+    client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
     client.on_connect = on_connect
 
     # Connect client

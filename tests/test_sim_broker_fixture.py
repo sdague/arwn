@@ -21,7 +21,7 @@ def test_sim_broker_clean_resets_messages(sim_broker, sim_broker_clean):
 def test_wait_for_message_returns_on_match(sim_broker, sim_broker_clean):
     from tests.conftest import wait_for_message
 
-    c = mqtt.Client()
+    c = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
     c.connect(sim_broker.host, sim_broker.port)
     c.loop_start()
     time.sleep(0.1)

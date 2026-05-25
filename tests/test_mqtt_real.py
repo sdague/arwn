@@ -26,7 +26,7 @@ def test_mqtt_fixture(sim_broker, sim_broker_clean):
     received = None
     done = False
 
-    def on_connect(client, userdata, flags, rc):
+    def on_connect(client, userdata, connect_flags, reason_code, properties):
         client.subscribe("foo/#")
         nonlocal connected
         connected = True
@@ -36,7 +36,7 @@ def test_mqtt_fixture(sim_broker, sim_broker_clean):
         received = message
         done = True
 
-    client = mqtt.Client()
+    client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
     client.on_connect = on_connect
     client.on_message = on_message
     client.connect(sim_broker.host, sim_broker.port)
@@ -75,7 +75,7 @@ def test_mqtt_disconnect(sim_broker, sim_broker_clean):
     config = dict(mqtt={})
     mq = engine.MQTT(sim_broker.host, config, port=sim_broker.port)
 
-    def on_connect(client, userdata, flags, rc):
+    def on_connect(client, userdata, connect_flags, reason_code, properties):
         client.subscribe("%s/#" % mq.root, qos=2)
 
     def on_message(client, userdata, message):
@@ -83,7 +83,7 @@ def test_mqtt_disconnect(sim_broker, sim_broker_clean):
             {message.topic: json.loads(message.payload.decode(encoding="UTF-8"))}
         )
 
-    client = mqtt.Client()
+    client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
     client.on_connect = on_connect
     client.on_message = on_message
     client.connect(sim_broker.host, sim_broker.port)

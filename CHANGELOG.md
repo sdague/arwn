@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+* Migrate paho-mqtt client API to v2 to eliminate deprecation warnings
 * Migrate test_mqtt_real.py to use SimpleMQTTBroker so tests run without external mosquitto
 * Migrate build backend from setuptools to hatchling
 * Replace tox with uv for local development and CI
