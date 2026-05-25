@@ -94,8 +94,12 @@ def test_mqtt_disconnect(sim_broker, sim_broker_clean):
     while not mq.client.is_connected() and (time.time() - start) < 5:
         time.sleep(0.1)
 
-    # Wait for the initial "alive" to arrive before simulating the crash.
-    wait_for_message(sim_broker.broker, "%s/status" % mq.root, timeout=2.0)
+    # Wait for the initial "alive" to arrive in the subscriber before simulating the crash.
+    deadline = time.time() + 5.0
+    while time.time() < deadline:
+        if len(received) >= 1:
+            break
+        time.sleep(0.05)
 
     # Force an unclean disconnect so the broker fires the will.
     # Shut down the socket BEFORE stopping paho's loop so paho cannot send

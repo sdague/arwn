@@ -4,6 +4,7 @@
 
 * Migrate paho-mqtt client API to v2 to eliminate deprecation warnings
 * Migrate test_mqtt_real.py to use SimpleMQTTBroker so tests run without external mosquitto
+* Fix test_mqtt_disconnect race: wait for subscriber to receive alive before forcing disconnect
 * Update Python version classifiers to reflect supported range (3.10–3.14)
 * Migrate build backend from setuptools to hatchling
 * Replace tox with uv for local development and CI
