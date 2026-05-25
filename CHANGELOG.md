@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-05-25
+
 * Add `Config` dataclass with typed attribute access and `from_dict()` factory
 * Normalize legacy config keys (`mqtt.user`→`username`, `mqtt.passwd`→`password`) with deprecation warnings
 * Validate required config fields (`mqtt.server`, `names`) at startup
@@ -21,6 +23,7 @@
 * Fix `RTL433Collector` crash on malformed JSON and CPU spin on subprocess death
 * Fix `SensorPacket.bat` stored as tuple instead of scalar
 * Remove debug `logger.error()` calls from `RTL433Collector.__init__`
+* Clean up noisy debug logging; promote MQTT send to INFO
 * Refactor rain handlers into `RainAccumulator` class with disk-persisted state
 * Add `RainEventTracker` for tracking rain events (start/end after 12h gap)
 * Add `RainStateStore` for atomic JSON state persistence (~/.local/share/arwn/)
