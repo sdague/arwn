@@ -14,7 +14,6 @@ import tempfile
 from unittest import mock
 from unittest.mock import MagicMock
 
-import pytest
 import yaml
 
 from arwn.cmd import collect

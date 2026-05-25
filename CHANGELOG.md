@@ -21,6 +21,8 @@
 * Fix test suite blocked by stray pytest-homeassistant-custom-component global plugin
 * Add Dependabot config for weekly pip and GitHub Actions updates
 * Replace black and isort with ruff for formatting and import sorting
+* Enable ruff E/W/F lint rules and fix all violations (unused imports, line length)
+* Remove dead `tests/arwn_fixtures.py` fixture file
 
 ## [2.1.0] - 2026-04-26
 

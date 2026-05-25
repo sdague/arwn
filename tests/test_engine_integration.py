@@ -5,7 +5,6 @@ import socket
 import time
 
 import paho.mqtt.client as paho
-import pytest
 
 from arwn import engine, handlers
 from tests.conftest import wait_for_message

@@ -14,10 +14,8 @@ import socket
 import time
 
 import paho.mqtt.client as mqtt
-import pytest
 
 from arwn import engine
-from tests.conftest import wait_for_message
 
 
 def test_mqtt_fixture(sim_broker, sim_broker_clean):
@@ -94,7 +92,7 @@ def test_mqtt_disconnect(sim_broker, sim_broker_clean):
     while not mq.client.is_connected() and (time.time() - start) < 5:
         time.sleep(0.1)
 
-    # Wait for the initial "alive" to arrive in the subscriber before simulating the crash.
+    # Wait for the initial "alive" to arrive before simulating the crash.
     deadline = time.time() + 5.0
     while time.time() < deadline:
         if len(received) >= 1:

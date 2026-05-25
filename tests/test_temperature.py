@@ -1,6 +1,5 @@
 """Tests for temperature conversion logic."""
 
-import math
 
 import pytest
 
