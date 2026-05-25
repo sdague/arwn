@@ -114,7 +114,7 @@ class SensorPacket(object):
 
     def __init__(self, stype=IS_NONE, bat=0, sensor_id=0, **kwargs):
         self.stype = stype
-        self.bat = (bat,)
+        self.bat = bat
         self.sensor_id = sensor_id
         self.data = {}
         self.data.update(kwargs)
@@ -265,11 +265,8 @@ class RFXCOMCollector(object):
 
 class RTL433Collector(object):
     def __init__(self, devices=None):
-        global RAIN_SENSORS
         cmd = ["rtl_433", "-F", "json"]
-        logger.error(devices)
-        logger.error(type(devices))
-        if type(devices) is list:
+        if isinstance(devices, list):
             for d in devices:
                 cmd.append("-R")
                 cmd.append("%s" % d)
@@ -281,7 +278,13 @@ class RTL433Collector(object):
 
     def __next__(self):
         line = self.rtl.stdout.readline()
-        data = json.loads(line.decode("utf-8"))
+        if not line:
+            raise StopIteration("rtl_433 process exited")
+        try:
+            data = json.loads(line.decode("utf-8"))
+        except json.JSONDecodeError:
+            logger.debug("Skipping non-JSON line from rtl_433: %s", line.rstrip())
+            return None
         self.log_data(data)
         packet = SensorPacket()
         packet.from_json(data)

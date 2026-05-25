@@ -60,17 +60,17 @@ class Temperature(object):
             if self.is_F():
                 return (self.temp - FOffset) / CScale
             elif self.is_K():
-                return self.temp + KOffset
+                return self.temp - KOffset
         elif unit == "F":
             if self.is_C():
                 return (self.temp * CScale) + FOffset
             elif self.is_K():
-                return ((self.temp + KOffset) * CScale) + FOffset
+                return ((self.temp - KOffset) * CScale) + FOffset
         elif unit == "K":
             if self.is_F():
                 return ((self.temp - FOffset) / CScale) + KOffset
             elif self.is_C():
-                return self.temp - KOffset
+                return self.temp + KOffset
 
         return self.temp
 

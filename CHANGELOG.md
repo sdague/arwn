@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+* Fix inverted Kelvin↔Celsius temperature conversion formula
+* Fix `RTL433Collector` crash on malformed JSON and CPU spin on subprocess death
+* Fix `SensorPacket.bat` stored as tuple instead of scalar
+* Remove debug `logger.error()` calls from `RTL433Collector.__init__`
 * Refactor rain handlers into `RainAccumulator` class with disk-persisted state
 * Add `RainEventTracker` for tracking rain events (start/end after 12h gap)
 * Add `RainStateStore` for atomic JSON state persistence (~/.local/share/arwn/)
