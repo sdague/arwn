@@ -7,7 +7,7 @@ from unittest.mock import patch
 import yaml
 
 from arwn.config import Config
-from arwn.engine import ConfigWatcher, Dispatcher
+from arwn.engine import ConfigWatcher, Dispatcher, SensorPacket
 
 
 def make_config(names=None):
@@ -90,3 +90,79 @@ def test_config_watcher_triggers_reload(mock_collector, mock_mqtt):
         assert dispatcher.names == {"aa:01": "garden"}
     finally:
         os.unlink(config_path)
+
+
+@patch("arwn.engine.MQTT")
+@patch("arwn.engine.RFXCOMCollector")
+@patch("time.sleep")
+def test_loopforever_restarts_collector_on_exit(mock_sleep, mock_collector, mock_mqtt):
+    config = make_config()
+    d = Dispatcher(config)
+
+    packet = SensorPacket()
+    packet.from_json(
+        {
+            "model": "Oregon-THGR810",
+            "id": 0xAE,
+            "channel": 1,
+            "battery_ok": 1,
+            "temperature_C": 20.0,
+            "humidity": 50,
+        }
+    )
+
+    call_count = [0]
+
+    def fake_get_collector(cfg):
+        call_count[0] += 1
+        if call_count[0] >= 3:
+            raise KeyboardInterrupt("stop the loop")
+        d.collector = iter([packet])
+
+    with patch.object(d, "_get_collector", side_effect=fake_get_collector):
+        try:
+            d.loopforever()
+        except KeyboardInterrupt:
+            pass
+
+    assert call_count[0] == 3
+    assert mock_sleep.call_count >= 2
+
+
+@patch("arwn.engine.MQTT")
+@patch("arwn.engine.RFXCOMCollector")
+@patch("time.sleep")
+def test_loopforever_resets_backoff_on_successful_packet(
+    mock_sleep, mock_collector, mock_mqtt
+):
+    config = make_config()
+    d = Dispatcher(config)
+
+    packet = SensorPacket()
+    packet.from_json(
+        {
+            "model": "Oregon-THGR810",
+            "id": 0xAE,
+            "channel": 1,
+            "battery_ok": 1,
+            "temperature_C": 20.0,
+            "humidity": 50,
+        }
+    )
+
+    call_count = [0]
+
+    def fake_get_collector(cfg):
+        call_count[0] += 1
+        if call_count[0] >= 3:
+            raise KeyboardInterrupt("stop the loop")
+        d.collector = iter([packet])
+
+    with patch.object(d, "_get_collector", side_effect=fake_get_collector):
+        try:
+            d.loopforever()
+        except KeyboardInterrupt:
+            pass
+
+    for call in mock_sleep.call_args_list:
+        assert call[0][0] == 1

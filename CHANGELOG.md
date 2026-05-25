@@ -12,6 +12,7 @@
 
 ### Added
 
+* Automatic collector restart with exponential backoff when rtl_433 exits.
 * SensorPacket test coverage (18 tests covering all sensor types).
 
 ## [3.0.0] - 2026-05-25

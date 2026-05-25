@@ -271,7 +271,9 @@ class RTL433Collector:
     def __next__(self):
         line = self.rtl.stdout.readline()
         if not line:
-            raise StopIteration("rtl_433 process exited")
+            rc = self.rtl.wait()
+            logger.warning("rtl_433 exited with code %s", rc)
+            raise StopIteration
         try:
             data = json.loads(line.decode("utf-8"))
         except json.JSONDecodeError:
@@ -339,21 +341,32 @@ class Dispatcher:
             raise ValueError(f"Unknown collector type: {config.collector.type}")
 
     def loopforever(self):
+        self._backoff = 1
+        while True:
+            try:
+                self._collect_loop()
+                logger.warning("Collector stopped, restarting in %ds", self._backoff)
+            except Exception:
+                logger.exception("Collector crashed, restarting in %ds", self._backoff)
+            time.sleep(self._backoff)
+            self._backoff = min(self._backoff * 2, 60)
+            self._get_collector(self.config)
 
+    def _collect_loop(self):
         for packet in self.collector:
             if packet is None:
                 continue
+            self._backoff = 1
             now = int(time.time())
 
-            # we send barometer sensors twice
+            # Baro sensors also have temp/humid, so they get published twice
             if packet.is_baro:
                 self.mqtt.send("barometer", packet.as_json(units="mbar", timestamp=now))
 
             if packet.is_moist:
-                # The reading of the moisture packets goes flakey a bit, apply
-                # some basic boundary conditions to it.
+                # Moisture readings go flakey; apply basic boundary checks
                 if packet.data["moisture"] > 10 or packet.data["temp"] > 150:
-                    logger.warn(
+                    logger.warning(
                         "Packet moisture data makes no sense: %s => %s"
                         % (packet, packet.as_json())
                     )
@@ -367,7 +380,7 @@ class Dispatcher:
 
             if packet.is_temp:
                 if packet.data["temp"] > MAX_TEMP or packet.data["temp"] < MIN_TEMP:
-                    logger.warn(
+                    logger.warning(
                         "Packet temp data makes no sense: %s => %s"
                         % (packet, packet.as_json())
                     )
