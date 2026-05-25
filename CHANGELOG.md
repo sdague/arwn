@@ -9,6 +9,14 @@
 * Remove redundant `will_set` inside `on_connect` (paho anti-pattern)
 * Remove Python 2 `(object)` boilerplate from all class definitions
 * Add `SyslogIdentifier=arwn` to systemd service template
+* Move Weather Underground uploads to background thread (no longer blocks MQTT message processing)
+* Add timeout (10s) to Weather Underground HTTP requests
+* Use `importlib.metadata.version()` instead of stale `__version__` string
+* Extract `MPS2MPH` module-level constant (was duplicated inline)
+* Extract `_ConfigFileHandler._reload()` to deduplicate on_modified/on_moved
+* Fix unclosed file handle in `collect.py` config loading
+* Fix `--piddir` help text (was incorrectly labeled "pid file name")
+* Remove dead test files (`test_arwn.py`, `broker.py`, `paho_test.py`)
 * Fix inverted Kelvin↔Celsius temperature conversion formula
 * Fix `RTL433Collector` crash on malformed JSON and CPU spin on subprocess death
 * Fix `SensorPacket.bat` stored as tuple instead of scalar

@@ -38,7 +38,9 @@ def parse_args():
     )
     parser.add_argument("-c", "--config", help="config file name", default="config.yml")
     parser.add_argument("-l", "--logfile", help="log file name", default="arwn.log")
-    parser.add_argument("-p", "--piddir", help="pid file name", default=os.getcwd())
+    parser.add_argument(
+        "-p", "--piddir", help="pid file directory", default=os.getcwd()
+    )
     return parser.parse_args()
 
 
@@ -67,7 +69,8 @@ def event_loop(config, config_path):
 
 def main():
     args = parse_args()
-    config = Config.from_dict(yaml.safe_load(open(args.config, "r").read()))
+    with open(args.config, "r") as f:
+        config = Config.from_dict(yaml.safe_load(f))
     config_path = os.path.abspath(args.config)
     if not args.foreground:
         fh, logger = setup_logger(config.logfile or args.logfile)

@@ -32,6 +32,7 @@ from arwn.vendor.RFXtrx.pyserial import PySerialTransport
 logger = logging.getLogger(__name__)
 
 MM2IN = 0.03937008
+MPS2MPH = 2.23694
 
 IS_NONE = 0
 IS_TEMP = 1 << 0
@@ -150,9 +151,8 @@ class SensorPacket:
                 self.data["rate"] = round(data["rain_rate_in_h"], 2)
             self.data["units"] = "in"
         if self.stype & IS_WIND:
-            mps2mph = 2.23694
-            speed = round(float(data["wind_avg_m_s"]) * mps2mph, 1)
-            gust = round(float(data["wind_max_m_s"]) * mps2mph, 1)
+            speed = round(float(data["wind_avg_m_s"]) * MPS2MPH, 1)
+            gust = round(float(data["wind_max_m_s"]) * MPS2MPH, 1)
             self.data["direction"] = data["wind_dir_deg"]
             self.data["speed"] = speed
             self.data["gust"] = gust
@@ -175,9 +175,8 @@ class SensorPacket:
             self.data["rate"] = round(packet.rainrate / 25.4, 2)
             self.data["units"] = "in"
         if self.stype & IS_WIND:
-            mps2mph = 2.23694
-            speed = round(float(packet.average_speed) * mps2mph, 1)
-            gust = round(float(packet.gust) * mps2mph, 1)
+            speed = round(float(packet.average_speed) * MPS2MPH, 1)
+            gust = round(float(packet.gust) * MPS2MPH, 1)
             self.data["direction"] = packet.direction
             self.data["speed"] = speed
             self.data["gust"] = gust
@@ -415,9 +414,7 @@ class _ConfigFileHandler(FileSystemEventHandler):
         self._config_path = config_path
         self._dispatcher = dispatcher
 
-    def on_modified(self, event):
-        if event.src_path != self._config_path:
-            return
+    def _reload(self):
         try:
             with open(self._config_path, "r") as f:
                 config = Config.from_dict(yaml.safe_load(f))
@@ -425,12 +422,12 @@ class _ConfigFileHandler(FileSystemEventHandler):
         except Exception:
             logger.exception("Failed to reload config from %s", self._config_path)
 
+    def on_modified(self, event):
+        if event.src_path != self._config_path:
+            return
+        self._reload()
+
     def on_moved(self, event):
         if event.dest_path != self._config_path:
             return
-        try:
-            with open(self._config_path, "r") as f:
-                config = Config.from_dict(yaml.safe_load(f))
-            self._dispatcher.reload(config)
-        except Exception:
-            logger.exception("Failed to reload config from %s", self._config_path)
+        self._reload()

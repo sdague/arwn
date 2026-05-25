@@ -2,8 +2,9 @@ import logging
 import re
 import urllib.parse as urllib
 import urllib.request as request
+from concurrent.futures import ThreadPoolExecutor
+from importlib.metadata import version as pkg_version
 
-import arwn
 from arwn.rain import RainAccumulator, RainEventTracker, RainStateStore
 
 logger = logging.getLogger(__name__)
@@ -37,6 +38,9 @@ class WeatherUnderground(MQTTAction):
     windspeed = 0
     windgust = 0
 
+    def __init__(self):
+        self._executor = ThreadPoolExecutor(max_workers=1)
+
     def is_ready(self):
         return (
             self.temp is not None
@@ -62,11 +66,11 @@ class WeatherUnderground(MQTTAction):
             self.rain = payload["since_midnight"]
 
         if self.is_ready():
-            self.send_to_wunderground(client)
+            self._executor.submit(self._upload_to_wunderground, client)
         else:
             logger.info("Wunderground not ready yet: %s" % self)
 
-    def send_to_wunderground(self, client):
+    def _upload_to_wunderground(self, client):
         if not client.config.wunderground:
             return
         hpa2inhg = 0.0295301
@@ -79,7 +83,7 @@ class WeatherUnderground(MQTTAction):
             "PASSWORD": client.config.wunderground.password,
             "dateutc": "now",
             "action": "updateraw",
-            "software": "arwn %s" % (arwn.__version__),
+            "software": "arwn %s" % pkg_version("arwn"),
             "tempf": self.temp,
             "dewptf": self.dewpoint,
             "humidity": self.humid,
@@ -93,7 +97,11 @@ class WeatherUnderground(MQTTAction):
             data["baromin"] = self.pressure * hpa2inhg
 
         params = urllib.urlencode(data)
-        resp = request.urlopen("%s?%s" % (BASEURL, params))
+        try:
+            resp = request.urlopen("%s?%s" % (BASEURL, params), timeout=10)
+        except Exception:
+            logger.exception("Failed to reach Weather Underground")
+            return
         logger.info(
             "Reported to WUnderground: %(tempf)sF / %(dewptf)sF - "
             "%(dailyrainin)sin - "
