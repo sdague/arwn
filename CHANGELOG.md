@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+* Refactor rain handlers into `RainAccumulator` class with disk-persisted state
+* Add `RainEventTracker` for tracking rain events (start/end after 12h gap)
+* Add `RainStateStore` for atomic JSON state persistence (~/.local/share/arwn/)
+* Fix year-boundary bug in rain midnight rollover detection (`%j` → `datetime.date`)
+* Fix potential crash when rain baseline is None on first packet
 * Migrate paho-mqtt client API to v2 to eliminate deprecation warnings
 * Migrate test_mqtt_real.py to use SimpleMQTTBroker so tests run without external mosquitto
 * Fix test_mqtt_disconnect race: wait for subscriber to receive alive before forcing disconnect

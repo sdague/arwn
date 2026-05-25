@@ -83,36 +83,28 @@ def test_rain_sensor_publishes_to_rain_topic(sim_broker, sim_broker_clean):
 
 
 def test_rain_handler_computes_today_total(sim_broker, sim_broker_clean):
-    """TodaysRain handler emits arwn/rain/today when LAST_RAIN_TOTAL is pre-seeded.
+    """RainAccumulator emits arwn/rain/today when baseline is pre-seeded.
 
-    The RecordRainTotal handler sets LAST_RAIN_TOTAL when the engine receives a
-    retained arwn/totals/rain replayed on subscribe. Pre-seed that retained message
+    The accumulator sets baseline when the engine receives a retained
+    arwn/totals/rain replayed on subscribe. Pre-seed that retained message
     before the engine connects so the handler chain has the state it needs.
     """
-    # Pre-seed a retained arwn/totals/rain so the engine's RecordRainTotal handler
-    # sets LAST_RAIN_TOTAL when it subscribes to arwn/# on connect.
     now = int(time.time())
     seed_payload = json.dumps({"total": 0.5, "units": "in", "timestamp": now})
     sim_broker.broker.retained["arwn/totals/rain"] = seed_payload.encode("utf-8")
 
     handlers.setup()
     mq = engine.MQTT("localhost", make_config(sim_broker.port), port=sim_broker.port)
-    # Use a separate plain paho client to publish rain messages so the engine's
-    # on_message callback receives them (the broker does not echo back to sender).
     publisher = paho.Client(callback_api_version=paho.CallbackAPIVersion.VERSION2)
     try:
-        # Wait for the engine to connect and process the retained arwn/totals/rain.
-        # The engine subscribes to arwn/# on connect; the broker replays retained
-        # messages so RecordRainTotal fires and sets LAST_RAIN_TOTAL.
         wait_for_message(sim_broker.broker, "arwn/status", timeout=2.0)
-        # Give the engine's on_message callback time to process the retained replay.
         deadline = time.monotonic() + 1.0
         while time.monotonic() < deadline:
-            if handlers.LAST_RAIN_TOTAL is not None:
+            if handlers._rain_accumulator.baseline is not None:
                 break
             time.sleep(0.05)
-        assert handlers.LAST_RAIN_TOTAL is not None, (
-            "LAST_RAIN_TOTAL not set after engine connected and received retained "
+        assert handlers._rain_accumulator.baseline is not None, (
+            "baseline not set after engine connected and received retained "
             "arwn/totals/rain"
         )
 
@@ -121,7 +113,6 @@ def test_rain_handler_computes_today_total(sim_broker, sim_broker_clean):
         try:
             sim_broker.broker.messages.clear()
 
-            # Publish rain — TodaysRain fires since LAST_RAIN_TOTAL is set
             rain_payload = json.dumps(
                 {"total": 0.7, "units": "in", "timestamp": now + 60}
             ).encode("utf-8")
