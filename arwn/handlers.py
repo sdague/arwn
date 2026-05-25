@@ -13,7 +13,7 @@ _rain_accumulator = None
 _rain_event_tracker = None
 
 
-class MQTTAction(object):
+class MQTTAction:
     regex = None
 
     def action(self, topic, payload):
@@ -67,14 +67,16 @@ class WeatherUnderground(MQTTAction):
             logger.info("Wunderground not ready yet: %s" % self)
 
     def send_to_wunderground(self, client):
+        if not client.config.wunderground:
+            return
         hpa2inhg = 0.0295301
         BASEURL = (
             "http://weatherstation.wunderground.com/"
             "weatherstation/updateweatherstation.php"
         )
         data = {
-            "ID": client.config["wunderground"]["station"],
-            "PASSWORD": client.config["wunderground"]["passwd"],
+            "ID": client.config.wunderground.station,
+            "PASSWORD": client.config.wunderground.password,
             "dateutc": "now",
             "action": "updateraw",
             "software": "arwn %s" % (arwn.__version__),

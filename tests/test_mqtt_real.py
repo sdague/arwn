@@ -16,6 +16,7 @@ import time
 import paho.mqtt.client as mqtt
 
 from arwn import engine
+from arwn.config import Config
 
 
 def test_mqtt_fixture(sim_broker, sim_broker_clean):
@@ -70,8 +71,8 @@ def test_mqtt_disconnect(sim_broker, sim_broker_clean):
     """
     received = []
 
-    config = dict(mqtt={})
-    mq = engine.MQTT(sim_broker.host, config, port=sim_broker.port)
+    config = Config.from_dict({"mqtt": {"server": sim_broker.host}, "names": {}})
+    mq = engine.MQTT(config, port=sim_broker.port)
 
     def on_connect(client, userdata, connect_flags, reason_code, properties):
         client.subscribe("%s/#" % mq.root, qos=2)

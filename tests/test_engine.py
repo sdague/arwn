@@ -6,15 +6,18 @@ from unittest.mock import patch
 
 import yaml
 
+from arwn.config import Config
 from arwn.engine import ConfigWatcher, Dispatcher
 
 
 def make_config(names=None):
-    return {
-        "collector": {"type": "rfxcom", "device": "/dev/ttyUSB0"},
-        "names": names or {"aa:01": "outdoor"},
-        "mqtt": {"server": "localhost"},
-    }
+    return Config.from_dict(
+        {
+            "collector": {"type": "rfxcom", "device": "/dev/ttyUSB0"},
+            "names": names or {"aa:01": "outdoor"},
+            "mqtt": {"server": "localhost"},
+        }
+    )
 
 
 @patch("arwn.engine.MQTT")
@@ -56,22 +59,22 @@ def test_dispatcher_reload_is_thread_safe(mock_collector, mock_mqtt):
 @patch("arwn.engine.MQTT")
 @patch("arwn.engine.RFXCOMCollector")
 def test_config_watcher_triggers_reload(mock_collector, mock_mqtt):
-    initial = {
+    initial_raw = {
         "collector": {"type": "rfxcom", "device": "/dev/null"},
         "names": {"aa:01": "outdoor"},
         "mqtt": {"server": "localhost"},
     }
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
-        yaml.dump(initial, f)
+        yaml.dump(initial_raw, f)
         config_path = f.name
 
     try:
-        dispatcher = Dispatcher(initial)
+        dispatcher = Dispatcher(Config.from_dict(initial_raw))
         watcher = ConfigWatcher(config_path, dispatcher)
         watcher.start()
         try:
-            updated = dict(initial)
+            updated = dict(initial_raw)
             updated["names"] = {"aa:01": "garden"}
             with open(config_path, "w") as f:
                 yaml.dump(updated, f)

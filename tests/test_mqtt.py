@@ -16,6 +16,7 @@ import paho.mqtt.client as mqtt
 import pytest
 
 from arwn import engine
+from arwn.config import Config
 from tests.mqtt_broker import SimpleMQTTBroker
 
 
@@ -58,10 +59,10 @@ def test_mqtt_basic_connection(mqtt_broker):
 
 def test_mqtt_engine_initialization(mqtt_broker):
     """Test MQTT engine initialization with test broker."""
-    config = dict(mqtt={})
+    config = Config.from_dict({"mqtt": {"server": "localhost"}, "names": {}})
 
     # Create MQTT engine
-    mq = engine.MQTT("localhost", config, port=mqtt_broker.port)
+    mq = engine.MQTT(config, port=mqtt_broker.port)
 
     # Start client loop to allow connection
     mq.client.loop_start()
@@ -78,10 +79,10 @@ def test_mqtt_engine_initialization(mqtt_broker):
 
 def test_mqtt_engine_send(mqtt_broker):
     """Test MQTT engine send method."""
-    config = dict(mqtt={})
+    config = Config.from_dict({"mqtt": {"server": "localhost"}, "names": {}})
 
     # Create MQTT engine
-    mq = engine.MQTT("localhost", config, port=mqtt_broker.port)
+    mq = engine.MQTT(config, port=mqtt_broker.port)
 
     # Start client loop
     mq.client.loop_start()
@@ -97,10 +98,10 @@ def test_mqtt_engine_send(mqtt_broker):
 
 def test_mqtt_status_messages(mqtt_broker):
     """Test MQTT status topic configuration."""
-    config = dict(mqtt={})
+    config = Config.from_dict({"mqtt": {"server": "localhost"}, "names": {}})
 
     # Create MQTT engine
-    mq = engine.MQTT("localhost", config, port=mqtt_broker.port)
+    mq = engine.MQTT(config, port=mqtt_broker.port)
 
     # Verify status topic is set correctly
     assert mq.root == "arwn"
@@ -110,8 +111,8 @@ def test_mqtt_status_messages(mqtt_broker):
 
 def test_mqtt_connection_lifecycle(mqtt_broker):
     """Test MQTT connection lifecycle (connect, verify, disconnect)."""
-    config = dict(mqtt={})
-    mq = engine.MQTT("localhost", config, port=mqtt_broker.port)
+    config = Config.from_dict({"mqtt": {"server": "localhost"}, "names": {}})
+    mq = engine.MQTT(config, port=mqtt_broker.port)
 
     # Start MQTT engine
     mq.client.loop_start()

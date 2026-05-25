@@ -5,6 +5,7 @@ Description=ARWN Collector
 ExecStart={arwn_collect} -f -c {config}
 Type=simple
 Restart=always
+SyslogIdentifier=arwn
 
 [Install]
 WantedBy=default.target

@@ -7,21 +7,24 @@ import time
 import paho.mqtt.client as paho
 
 from arwn import engine, handlers
+from arwn.config import Config
 from tests.conftest import wait_for_message
 
 
-def make_config(port):
-    return {
-        "mqtt": {"server": "localhost", "port": port},
-        "names": {},
-        "collector": {"type": "rfxcom", "device": "/dev/null"},
-    }
+def make_config(port, names=None):
+    return Config.from_dict(
+        {
+            "mqtt": {"server": "localhost", "port": port},
+            "names": names or {},
+            "collector": {"type": "rfxcom", "device": "/dev/null"},
+        }
+    )
 
 
 def test_status_alive_published_with_retain(sim_broker, sim_broker_clean):
     """engine.MQTT publishes arwn/status with retain=True on connect."""
     handlers.setup()
-    mq = engine.MQTT("localhost", make_config(sim_broker.port), port=sim_broker.port)
+    mq = engine.MQTT(make_config(sim_broker.port), port=sim_broker.port)
     try:
         wait_for_message(sim_broker.broker, "arwn/status", timeout=2.0)
         assert "arwn/status" in sim_broker.broker.retained
@@ -35,7 +38,7 @@ def test_status_alive_published_with_retain(sim_broker, sim_broker_clean):
 def test_will_published_on_unclean_disconnect(sim_broker, sim_broker_clean):
     """Will message arwn/status=dead is published when engine socket is force-closed."""
     handlers.setup()
-    mq = engine.MQTT("localhost", make_config(sim_broker.port), port=sim_broker.port)
+    mq = engine.MQTT(make_config(sim_broker.port), port=sim_broker.port)
     try:
         # Wait for initial status=alive
         wait_for_message(sim_broker.broker, "arwn/status", timeout=2.0)
@@ -67,7 +70,7 @@ def test_will_published_on_unclean_disconnect(sim_broker, sim_broker_clean):
 def test_rain_sensor_publishes_to_rain_topic(sim_broker, sim_broker_clean):
     """engine.MQTT.send('rain', payload) publishes to arwn/rain."""
     handlers.setup()
-    mq = engine.MQTT("localhost", make_config(sim_broker.port), port=sim_broker.port)
+    mq = engine.MQTT(make_config(sim_broker.port), port=sim_broker.port)
     try:
         wait_for_message(sim_broker.broker, "arwn/status", timeout=2.0)
         now = int(time.time())
@@ -93,7 +96,7 @@ def test_rain_handler_computes_today_total(sim_broker, sim_broker_clean):
     sim_broker.broker.retained["arwn/totals/rain"] = seed_payload.encode("utf-8")
 
     handlers.setup()
-    mq = engine.MQTT("localhost", make_config(sim_broker.port), port=sim_broker.port)
+    mq = engine.MQTT(make_config(sim_broker.port), port=sim_broker.port)
     publisher = paho.Client(callback_api_version=paho.CallbackAPIVersion.VERSION2)
     try:
         wait_for_message(sim_broker.broker, "arwn/status", timeout=2.0)
@@ -169,9 +172,8 @@ def test_retained_rain_total_replayed_on_reconnect(sim_broker, sim_broker_clean)
 def test_temperature_sensor_routes_by_name(sim_broker, sim_broker_clean):
     """engine.MQTT.send routes temperature data to arwn/temperature/<name>."""
     handlers.setup()
-    config = make_config(sim_broker.port)
-    config["names"] = {"aa:01": "outside"}
-    mq = engine.MQTT("localhost", config, port=sim_broker.port)
+    config = make_config(sim_broker.port, names={"aa:01": "outside"})
+    mq = engine.MQTT(config, port=sim_broker.port)
     try:
         wait_for_message(sim_broker.broker, "arwn/status", timeout=2.0)
         now = int(time.time())

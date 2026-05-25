@@ -24,6 +24,7 @@ import pid
 import yaml
 
 from arwn import engine
+from arwn.config import Config
 
 
 def parse_args():
@@ -66,10 +67,10 @@ def event_loop(config, config_path):
 
 def main():
     args = parse_args()
-    config = yaml.safe_load(open(args.config, "r").read())
+    config = Config.from_dict(yaml.safe_load(open(args.config, "r").read()))
     config_path = os.path.abspath(args.config)
     if not args.foreground:
-        fh, logger = setup_logger(config.get("logfile", args.logfile))
+        fh, logger = setup_logger(config.logfile or args.logfile)
         try:
             with daemon.DaemonContext(
                 files_preserve=[fh.stream, sys.stdout],

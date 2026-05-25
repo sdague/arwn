@@ -25,6 +25,7 @@ from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
 from arwn import handlers, temperature
+from arwn.config import Config
 from arwn.vendor.RFXtrx import lowlevel as ll
 from arwn.vendor.RFXtrx.pyserial import PySerialTransport
 
@@ -52,7 +53,7 @@ MAX_TEMP = 150
 MIN_TEMP = -40
 
 
-class SensorPacket(object):
+class SensorPacket:
     """Convert RFXtrx packet to native packet for ARWN"""
 
     def _set_type(self, packet):
@@ -189,35 +190,28 @@ class SensorPacket(object):
         return data
 
 
-class MQTT(object):
-    def __init__(self, server, config, port=1883):
+class MQTT:
+    def __init__(self, config, port=None):
         client = paho.Client(callback_api_version=paho.CallbackAPIVersion.VERSION2)
         handlers.setup()
-        self.server = server
-        self.port = port
+        self.server = config.mqtt.server
+        self.port = port or config.mqtt.port
         self.config = config
-        self.root = config["mqtt"].get("root", "arwn")
+        self.root = config.mqtt.root
         self.status_topic = "%s/status" % self.root
-        self.user = config["mqtt"].get("user")
-        self.passwd = config["mqtt"].get("passwd")
-        if self.user and self.passwd:
-            client.username_pw_set(self.user, self.passwd)
+
+        if config.mqtt.username and config.mqtt.password:
+            client.username_pw_set(config.mqtt.username, config.mqtt.password)
 
         def on_connect(client, userdata, connect_flags, reason_code, properties):
             status = {"status": "alive", "timestamp": int(time.time())}
             client.subscribe("%s/#" % self.root)
             client.publish(self.status_topic, json.dumps(status), qos=2, retain=True)
-            client.will_set(self.status_topic, json.dumps(status_dead), retain=True)
 
         def on_message(client, userdata, msg):
             payload = json.loads(msg.payload.decode("utf-8"))
             handlers.run(self, msg.topic, payload)
             return True
-
-        if config["mqtt"].get("username") and config["mqtt"].get("password"):
-            client.username_pw_set(
-                config["mqtt"]["username"], config["mqtt"]["password"]
-            )
 
         status_dead = {"status": "dead"}
         client.will_set(self.status_topic, json.dumps(status_dead), qos=2, retain=True)
@@ -237,7 +231,7 @@ class MQTT(object):
         self.client.publish(topic, json.dumps(payload), retain=retain)
 
 
-class RFXCOMCollector(object):
+class RFXCOMCollector:
     def __init__(self, device):
         self.transport = PySerialTransport(device)
         self.transport.reset()
@@ -263,7 +257,7 @@ class RFXCOMCollector(object):
         return packet
 
 
-class RTL433Collector(object):
+class RTL433Collector:
     def __init__(self, devices=None):
         cmd = ["rtl_433", "-F", "json"]
         if isinstance(devices, list):
@@ -323,37 +317,28 @@ class RTL433Collector(object):
             pass
 
 
-class Dispatcher(object):
+class Dispatcher:
     def __init__(self, config):
         self._names_lock = threading.Lock()
         self._get_collector(config)
-        self.names = config["names"]
-        server = config["mqtt"]["server"]
-        self.mqtt = MQTT(server, config)
+        self.names = config.names
+        self.mqtt = MQTT(config)
         self.config = config
         logger.debug("Config => %s", self.config)
 
     def reload(self, config):
         with self._names_lock:
-            self.names = config["names"]
+            self.names = config.names
         count = len(self.names)
         logger.info("Config reloaded: %d sensor names loaded", count)
 
     def _get_collector(self, config):
-        col = config.get("collector")
-        if col:
-            ctype = col.get("type")
-            if ctype == "rtl433":
-                # devices to limit to
-                devices = col.get("devices", None)
-                self.collector = RTL433Collector(devices)
-            elif ctype == "rfxcom":
-                device = col["device"]
-                self.collector = RFXCOMCollector(device)
+        if config.collector.type == "rtl433":
+            self.collector = RTL433Collector(config.collector.devices)
+        elif config.collector.type == "rfxcom":
+            self.collector = RFXCOMCollector(config.collector.device)
         else:
-            # fall back for existing configs
-            device = config["device"]
-            self.collector = RFXCOMCollector(device)
+            raise ValueError(f"Unknown collector type: {config.collector.type}")
 
     def loopforever(self):
 
@@ -435,7 +420,7 @@ class _ConfigFileHandler(FileSystemEventHandler):
             return
         try:
             with open(self._config_path, "r") as f:
-                config = yaml.safe_load(f)
+                config = Config.from_dict(yaml.safe_load(f))
             self._dispatcher.reload(config)
         except Exception:
             logger.exception("Failed to reload config from %s", self._config_path)
@@ -445,7 +430,7 @@ class _ConfigFileHandler(FileSystemEventHandler):
             return
         try:
             with open(self._config_path, "r") as f:
-                config = yaml.safe_load(f)
+                config = Config.from_dict(yaml.safe_load(f))
             self._dispatcher.reload(config)
         except Exception:
             logger.exception("Failed to reload config from %s", self._config_path)

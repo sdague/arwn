@@ -17,6 +17,7 @@ from unittest.mock import MagicMock
 import yaml
 
 from arwn.cmd import collect
+from arwn.config import Config
 
 
 @mock.patch("arwn.cmd.collect.event_loop")
@@ -32,11 +33,13 @@ def test_start_in_forground(evloop, sample_config, capsys):
 
 
 def make_minimal_config():
-    return {
-        "collector": {"type": "rfxcom", "device": "/dev/null"},
-        "names": {},
-        "mqtt": {"server": "localhost"},
-    }
+    return Config.from_dict(
+        {
+            "collector": {"type": "rfxcom", "device": "/dev/null"},
+            "names": {},
+            "mqtt": {"server": "localhost"},
+        }
+    )
 
 
 @mock.patch("arwn.cmd.collect.engine.ConfigWatcher")
