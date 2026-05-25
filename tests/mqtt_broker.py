@@ -132,6 +132,19 @@ class SimpleMQTTBroker:
                                     except Exception:
                                         pass
 
+                # Handle PUBREL packet (type 6) — second step of QoS 2 handshake
+                elif packet_type == 6:
+                    remaining = self._read_remaining_length(conn)
+                    if remaining >= 2:
+                        rel_data = conn.recv(remaining)
+                        if len(rel_data) >= 2:
+                            packet_id = struct.unpack("!H", rel_data[:2])[0]
+                            pubcomp = struct.pack("!BBH", 0x70, 0x02, packet_id)
+                            try:
+                                conn.send(pubcomp)
+                            except Exception:
+                                pass
+
                 # Handle SUBSCRIBE packet (type 8)
                 elif packet_type == 8:
                     # Read remaining length
@@ -212,6 +225,11 @@ class SimpleMQTTBroker:
                     )
             else:
                 self.wills.pop(conn, None)
+            self.subscriptions.pop(conn, None)
+            try:
+                self.connections.remove(conn)
+            except ValueError:
+                pass
             try:
                 conn.close()
             except Exception:

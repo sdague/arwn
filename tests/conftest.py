@@ -1,13 +1,10 @@
 """Pytest configuration and fixtures."""
 
-import os
 import re
-import subprocess
 import time
 from dataclasses import dataclass
 from typing import Union
 
-import paho.mqtt.client as mqtt
 import pytest
 
 from tests.mqtt_broker import ReceivedMessage, SimpleMQTTBroker
@@ -92,72 +89,3 @@ names:
   "e9:04": "Garage"
 """)
     return str(config_path)
-
-
-class MosquittoSetupFail(Exception):
-    """Raised when mosquitto cannot be found."""
-
-    pass
-
-
-class MosquittoFail(Exception):
-    """Raised when mosquitto fails to start."""
-
-    pass
-
-
-@pytest.fixture
-def mosquitto_real(tmp_path):
-    """Start a real mosquitto instance for testing.
-
-    This fixture starts a mosquitto MQTT broker on a random port
-    and ensures it's running before tests execute.
-
-    Yields:
-        tuple: (process, port) where process is the Popen object
-               and port is the listening port number
-    """
-    # Pick a random available port
-    import socket
-
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind(("localhost", 0))
-    addr, port = s.getsockname()
-    s.close()
-
-    # Create mosquitto config
-    config_path = tmp_path / "mqtt.conf"
-    config_path.write_text(f"""
-pid_file {tmp_path}/mosquitto.pid
-persistence true
-persistence_location {tmp_path}
-log_dest file {tmp_path}/mosquitto.log
-listener {port}
-allow_anonymous true
-""")
-
-    # Start mosquitto
-    try:
-        process = subprocess.Popen(["mosquitto", "-c", str(config_path)])
-    except OSError:
-        pytest.skip("Mosquitto not installed")
-        return
-
-    # Wait for mosquitto to be ready
-    for _ in range(100):
-        try:
-            c = mqtt.Client()
-            c.connect("localhost", port)
-            c.disconnect()
-            break
-        except Exception:
-            time.sleep(0.1)
-    else:
-        process.kill()
-        pytest.fail("Mosquitto failed to start")
-
-    yield process, port
-
-    # Cleanup
-    process.kill()
-    process.wait()

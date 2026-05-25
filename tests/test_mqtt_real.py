@@ -2,23 +2,26 @@
 # -*- coding: utf-8 -*-
 
 """
-test_arwn
+test_mqtt_real
 ----------------------------------
 
-Tests for `arwn` module.
+Tests for MQTT connection lifecycle and disconnect/reconnect behavior.
+Previously relied on an external mosquitto process; now uses SimpleMQTTBroker.
 """
 
 import json
+import socket
 import time
 
 import paho.mqtt.client as mqtt
 import pytest
 
 from arwn import engine
+from tests.conftest import wait_for_message
 
 
-def test_mqtt_fixture(mosquitto_real):
-    """Test MQTT fixture with real mosquitto broker."""
+def test_mqtt_fixture(sim_broker, sim_broker_clean):
+    """Test MQTT pub/sub round-trip via SimpleMQTTBroker."""
     connected = False
     received = None
     done = False
@@ -36,8 +39,7 @@ def test_mqtt_fixture(mosquitto_real):
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_message = on_message
-    _, port = mosquitto_real
-    client.connect("localhost", port)
+    client.connect(sim_broker.host, sim_broker.port)
     client.loop_start()
 
     # Wait for connection before publishing
@@ -62,13 +64,16 @@ def test_mqtt_fixture(mosquitto_real):
     assert received.topic == "foo/start"
 
 
-def test_mqtt_disconnect(mosquitto_real):
-    """Test MQTT disconnect and reconnect behavior."""
+def test_mqtt_disconnect(sim_broker, sim_broker_clean):
+    """Test MQTT disconnect and reconnect behavior of the engine MQTT class.
+
+    Verifies the lifecycle: alive (initial connect) → dead (will on unclean
+    disconnect) → alive (reconnect publishes status again).
+    """
     received = []
 
-    _, port = mosquitto_real
     config = dict(mqtt={})
-    mq = engine.MQTT("localhost", config, port=port)
+    mq = engine.MQTT(sim_broker.host, config, port=sim_broker.port)
 
     def on_connect(client, userdata, flags, rc):
         client.subscribe("%s/#" % mq.root, qos=2)
@@ -77,30 +82,53 @@ def test_mqtt_disconnect(mosquitto_real):
         received.append(
             {message.topic: json.loads(message.payload.decode(encoding="UTF-8"))}
         )
-        print("Got a message!")
 
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_message = on_message
-    client.connect("localhost", port)
+    client.connect(sim_broker.host, sim_broker.port)
     client.loop_start()
 
-    # Wait for the engine client to connect before force-closing its socket
+    # Wait for the engine client to connect before force-closing its socket.
     start = time.time()
     while not mq.client.is_connected() and (time.time() - start) < 5:
         time.sleep(0.1)
 
-    # force a failure, this triggers the will. We have to force a
-    # sleep before the socket close otherwise the will can
-    # actually process as the first message because of the lack of
-    # order guaruntees.
-    time.sleep(0.1)
-    mq.client.socket().close()
-    mq.client.reconnect()
-    time.sleep(0.1)
+    # Wait for the initial "alive" to arrive before simulating the crash.
+    wait_for_message(sim_broker.broker, "%s/status" % mq.root, timeout=2.0)
+
+    # Force an unclean disconnect so the broker fires the will.
+    # Shut down the socket BEFORE stopping paho's loop so paho cannot send
+    # a clean DISCONNECT (which would suppress the will on the broker side).
+    try:
+        mq.client._sock.shutdown(socket.SHUT_RDWR)
+    except Exception:
+        pass
+    mq.client.loop_stop()
+
+    # Wait for the broker to deliver the will ("dead") before reconnecting.
+    deadline = time.time() + 2.0
+    while time.time() < deadline:
+        if len(received) >= 2:
+            break
+        time.sleep(0.05)
+
+    # Reconnect: fresh TCP connection → broker processes CONNECT and paho's
+    # on_connect fires, publishing status=alive again.
+    mq.client.connect(sim_broker.host, sim_broker.port)
+    mq.client.loop_start()
+
+    # Wait for the third message (alive after reconnect).
+    deadline = time.time() + 2.0
+    while time.time() < deadline:
+        if len(received) >= 3:
+            break
+        time.sleep(0.05)
 
     client.loop_stop()
     client.disconnect()
+    mq.client.loop_stop()
+    mq.client.disconnect()
 
     assert len(received) == 3, received
 
