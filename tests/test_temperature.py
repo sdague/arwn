@@ -1,6 +1,5 @@
 """Tests for temperature conversion logic."""
 
-
 import pytest
 
 from arwn.temperature import Temperature
