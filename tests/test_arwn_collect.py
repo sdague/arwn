@@ -9,6 +9,7 @@ Tests for `arwn` module.
 """
 
 import os
+import re
 import sys
 import tempfile
 from unittest import mock
@@ -28,7 +29,8 @@ def test_start(evloop, sample_config, capsys):
         collect.main()
 
     captured = capsys.readouterr()
-    assert "[DEBUG] root: Starting arwn" in captured.out
+    plain = re.sub(r"\x1b\[[0-9;]*m", "", captured.out)
+    assert "[DEBUG] root: Starting arwn" in plain
     assert evloop.called, "Eventloop not called"
 
 

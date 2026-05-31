@@ -19,6 +19,7 @@ import logging
 import os
 import sys
 
+import colorlog
 import yaml
 
 from arwn import engine
@@ -34,7 +35,9 @@ def parse_args():
 def setup_logger():
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
-    formatter = logging.Formatter("[%(levelname)s] %(name)s: %(message)s")
+    formatter = colorlog.ColoredFormatter(
+        "%(log_color)s[%(levelname)s]%(reset)s %(name)s: %(message)s"
+    )
     fh = logging.StreamHandler(sys.stdout)
     fh.setFormatter(formatter)
     logger.addHandler(fh)

@@ -29,6 +29,7 @@ dependencies = [
     "paho-mqtt>=1.1",
     "pyserial>=3",
     "watchdog>=3.0",
+    "colorlog>=6.0",
 ]
 
 [project.optional-dependencies]

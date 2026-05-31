@@ -14,6 +14,7 @@
 
 * Automatic collector restart with exponential backoff when rtl_433 exits.
 * SensorPacket test coverage (18 tests covering all sensor types).
+* Colored log output using `colorlog` (DEBUG=cyan, INFO=green, WARNING=yellow, ERROR=red).
 
 ## [3.0.0] - 2026-05-25
 
